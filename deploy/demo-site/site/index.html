@@ -1,0 +1,185 @@
+<!doctype html>
+<!--
+  "Lumen", a made-up smart lighting company: the demo customer website of Euron Open
+  SupportDesk. Served on http://localhost:4815 (the demo-site Compose service), a different
+  origin from the app (4810) and the API (4830), so it embeds the chat widget exactly as a
+  real customer website would:
+
+    <script src="http://localhost:4810/widget.js" data-key="pk_..." data-api="http://localhost:4830" async></script>
+
+  `make demo` seeds the Lumen organisation and writes config.js next to this file
+  (git-ignored) with its widget key. See config.example.js for the format.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lumen: light that knows you</title>
+  <meta name="description" content="Lumen smart bulbs, the Lumen Bridge and Lumen Plus: warm, fast, private lighting for every room.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='28' r='18' fill='%23f6b544'/%3E%3Crect x='24' y='48' width='16' height='8' rx='3' fill='%23312e81'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="Lumen home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      Lumen
+    </a>
+    <nav aria-label="Main">
+      <a href="#products">Products</a>
+      <a href="#plus">Lumen Plus</a>
+      <a href="#help">Help</a>
+    </nav>
+    <a class="button button-small" href="#products">Shop bulbs</a>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">New: Lumen Bulb 3 with Night Glow</p>
+        <h1>Light that knows <span class="glow-text">how you live.</span></h1>
+        <p class="lede">
+          Warm, flicker-free smart bulbs that follow your day, work even when the internet
+          does not, and set up in under a minute. No subscriptions needed for the basics.
+        </p>
+        <div class="cta-row">
+          <a class="button" href="#products">See the bulbs</a>
+          <button class="button button-ghost" type="button" data-open-chat>Ask us anything</button>
+        </div>
+        <ul class="proof" aria-label="Highlights">
+          <li><strong>4.8</strong> average rating</li>
+          <li><strong>2 year</strong> warranty</li>
+          <li><strong>Free</strong> shipping over $40</li>
+        </ul>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="halo"></div>
+        <div class="bulb">
+          <div class="bulb-glass"></div>
+          <div class="bulb-base"></div>
+        </div>
+        <div class="chip chip-a">Sunrise in 12 min</div>
+        <div class="chip chip-b">Living room: 2700 K</div>
+      </div>
+    </section>
+
+    <section id="products" class="section">
+      <h2>Everything you need for a brighter home</h2>
+      <p class="section-lede">Start with one bulb. Add a Bridge when you want routines across the whole house.</p>
+      <div class="grid">
+        <article class="product">
+          <div class="product-art art-bulb" aria-hidden="true"></div>
+          <h3>Lumen Bulb 3</h3>
+          <p>16 million colours, 2200 to 6500 K whites, Night Glow for hallways at 2 am.</p>
+          <p class="price">$19</p>
+        </article>
+        <article class="product">
+          <div class="product-art art-bridge" aria-hidden="true"></div>
+          <h3>Lumen Bridge</h3>
+          <p>Connects up to 50 bulbs, runs your routines locally, keeps working offline.</p>
+          <p class="price">$49</p>
+        </article>
+        <article class="product">
+          <div class="product-art art-strip" aria-hidden="true"></div>
+          <h3>Lumen Strip</h3>
+          <p>Two metres of soft, even light for shelves, desks and the back of the TV.</p>
+          <p class="price">$34</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="plus" class="section plus">
+      <div>
+        <p class="eyebrow">Lumen Plus</p>
+        <h2>Your lights, everywhere you are</h2>
+        <p class="section-lede">
+          Remote control away from home, presence simulation while you travel, unlimited
+          scenes and priority support, for $3.99 a month or $39 a year.
+        </p>
+        <button class="button" type="button" data-open-chat>Questions about Plus? Chat with us</button>
+      </div>
+      <ul class="checks">
+        <li>Control your lights from anywhere</li>
+        <li>Vacation mode that looks lived in</li>
+        <li>Share with up to 6 family members</li>
+        <li>Priority answers from our team</li>
+      </ul>
+    </section>
+
+    <section id="help" class="section help">
+      <h2>Need a hand?</h2>
+      <p class="section-lede">
+        Our assistant answers from the Lumen help center in seconds, with sources, and hands
+        you to a person whenever it is not sure. Try asking one of these:
+      </p>
+      <div class="questions">
+        <button type="button" class="question" data-ask="How long does shipping take?">How long does shipping take?</button>
+        <button type="button" class="question" data-ask="Do Lumen bulbs work without internet?">Do the bulbs work without internet?</button>
+        <button type="button" class="question" data-ask="What does Lumen Plus include?">What does Lumen Plus include?</button>
+        <button type="button" class="question" data-ask="I was charged twice this month, can a person help?">I was charged twice, can a person help?</button>
+      </div>
+      <div id="widget-note" class="note" role="status" hidden>
+        <strong>The chat widget is not connected yet.</strong>
+        Run <code>make demo</code> in the repository to seed the Lumen demo company, then
+        reload this page. It writes <code>deploy/demo-site/site/config.js</code> with the
+        widget key.
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="brand"><span class="brand-mark" aria-hidden="true"></span>Lumen</span>
+    <span>A demo website for Euron Open SupportDesk. Lumen is not a real company.</span>
+  </footer>
+
+  <script src="config.js" onerror="window.__sdConfigMissing = true"></script>
+  <script>
+  // Injects the SupportDesk widget exactly as a customer would paste it, using the key
+  // `make demo` wrote into config.js. Without a key it shows a note instead.
+  (function () {
+    var key = window.SUPPORTDESK_WIDGET_KEY;
+    var note = document.getElementById("widget-note");
+
+    if (!key || window.__sdConfigMissing) {
+      if (note) note.hidden = false;
+      document.querySelectorAll("[data-open-chat], [data-ask]").forEach(function (el) {
+        el.addEventListener("click", function () {
+          if (!note) return;
+          note.hidden = false;
+          note.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+      return;
+    }
+
+    var s = document.createElement("script");
+    s.src = window.SUPPORTDESK_WIDGET_SRC || "http://localhost:4810/widget.js";
+    s.async = true;
+    s.setAttribute("data-key", key);
+    s.setAttribute("data-api", window.SUPPORTDESK_API_URL || "http://localhost:4830");
+    s.onerror = function () {
+      if (!note) return;
+      note.innerHTML =
+        "<strong>The widget script could not be loaded.</strong> Is the stack running? " +
+        "Start it with <code>make up</code> and reload this page.";
+      note.hidden = false;
+    };
+    document.body.appendChild(s);
+
+    // Buttons open the widget when it exposes an API; otherwise its launcher is one click away.
+    function open(question) {
+      var api = window.SupportDesk;
+      if (api && typeof api.open === "function") {
+        api.open(question ? { message: question } : undefined);
+      }
+    }
+    document.querySelectorAll("[data-open-chat]").forEach(function (el) {
+      el.addEventListener("click", function () { open(); });
+    });
+    document.querySelectorAll("[data-ask]").forEach(function (el) {
+      el.addEventListener("click", function () { open(el.getAttribute("data-ask")); });
+    });
+  })();
+  </script>
+</body>
+</html>

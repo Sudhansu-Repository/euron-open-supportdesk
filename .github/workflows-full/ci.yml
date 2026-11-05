@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sanitize:
+    name: sanitization and OpenAPI drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/check-sanitization.sh
+      - uses: astral-sh/setup-uv@v6
+      - name: OpenAPI reference matches the app
+        working-directory: apps/api
+        run: uv sync --frozen && uv run pytest tests/unit/system/test_openapi_drift.py -q
+
+  integration:
+    name: integration tests (Postgres 16 with pgvector, Redis 7, mock AI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.1-pg16
+        env:
+          POSTGRES_USER: supportdesk
+          POSTGRES_PASSWORD: supportdesk
+          POSTGRES_DB: supportdesk
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U supportdesk"
+          --health-interval 3s --health-timeout 3s --health-retries 30
+      redis:
+        image: redis:7.4.6-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://supportdesk:supportdesk@localhost:5432/supportdesk_test
+      TEST_REDIS_URL: redis://localhost:6379/15
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      # The integration suite runs the real API and worker against real Postgres (pgvector)
+      # and Redis; the mock AI (OpenAI, Anthropic and Ollama wire formats) stands in for
+      # every LLM provider, so no key and no network are needed.
+      - run: uv python install 3.12 && uv sync --frozen --extra local-embeddings
+      - name: Mock AI
+        run: |
+          uv run uvicorn mockai.app:app --host 127.0.0.1 --port 4850 > /tmp/mockai.log 2>&1 &
+          for _ in $(seq 1 30); do curl -sf http://127.0.0.1:4850/healthz && break; sleep 1; done
+      - run: uv run pytest tests/unit tests/integration -m "not ollama" -q --cov=supportdesk --cov-report=term-missing:skip-covered --cov-fail-under=85

@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="t d">
+  <title id="t">SupportDesk architecture</title>
+  <desc id="d">Customers reach SupportDesk through the website widget, email, the portal and help center, and the REST API; agents use the web app. The web app serves the widget frame and proxies the API. The API writes conversations, knowledge and jobs to Postgres with pgvector in one transaction, publishes live events over Redis or Postgres, stores files in S3 and seals secrets with KMS. Workers are woken by NOTIFY, claim jobs with SKIP LOCKED leases, run AI turns against the configured model provider, ingest knowledge, send email through SMTP or SES, and deliver signed webhooks.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker>
+    <marker id="i" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#4f46e5"/></marker>
+  </defs>
+  <rect width="1200" height="640" rx="16" fill="#f8fafc"/>
+  <g font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#0f172a">
+    <!-- column labels -->
+    <text x="130" y="40" text-anchor="middle" fill="#64748b" font-size="12" font-weight="600" letter-spacing="1">PEOPLE</text>
+    <text x="410" y="40" text-anchor="middle" fill="#64748b" font-size="12" font-weight="600" letter-spacing="1">SUPPORTDESK</text>
+    <text x="740" y="40" text-anchor="middle" fill="#64748b" font-size="12" font-weight="600" letter-spacing="1">DATA</text>
+    <text x="1050" y="40" text-anchor="middle" fill="#64748b" font-size="12" font-weight="600" letter-spacing="1">OUTSIDE SERVICES</text>
+
+    <!-- people -->
+    <rect x="30" y="60" width="200" height="76" rx="12" fill="#e2e8f0"/>
+    <text x="130" y="92" text-anchor="middle" font-weight="650">Website widget</text>
+    <text x="130" y="114" text-anchor="middle" fill="#475569" font-size="13">iframe on any allowed site</text>
+
+    <rect x="30" y="156" width="200" height="76" rx="12" fill="#e2e8f0"/>
+    <text x="130" y="188" text-anchor="middle" font-weight="650">Email</text>
+    <text x="130" y="210" text-anchor="middle" fill="#475569" font-size="13">provider posts raw mail</text>
+
+    <rect x="30" y="252" width="200" height="76" rx="12" fill="#e2e8f0"/>
+    <text x="130" y="284" text-anchor="middle" font-weight="650">Portal, help center</text>
+    <text x="130" y="306" text-anchor="middle" fill="#475569" font-size="13">magic link sign-in</text>
+
+    <rect x="30" y="348" width="200" height="76" rx="12" fill="#e2e8f0"/>
+    <text x="130" y="380" text-anchor="middle" font-weight="650">Integrations</text>
+    <text x="130" y="402" text-anchor="middle" fill="#475569" font-size="13">REST API keys</text>
+
+    <rect x="30" y="444" width="200" height="76" rx="12" fill="#e0e7ff"/>
+    <text x="130" y="476" text-anchor="middle" font-weight="650">Agents</text>
+    <text x="130" y="498" text-anchor="middle" fill="#475569" font-size="13">inbox, approvals, settings</text>
+
+    <!-- supportdesk -->
+    <rect x="310" y="60" width="200" height="116" rx="12" fill="#c7d2fe"/>
+    <text x="410" y="96" text-anchor="middle" font-weight="650">web</text>
+    <text x="410" y="120" text-anchor="middle" fill="#3730a3" font-size="13">Next.js 15: agent app,</text>
+    <text x="410" y="138" text-anchor="middle" fill="#3730a3" font-size="13">portal, widget frame,</text>
+    <text x="410" y="156" text-anchor="middle" fill="#3730a3" font-size="13">proxies /api and /ws</text>
+
+    <rect x="310" y="236" width="200" height="140" rx="12" fill="#a5b4fc"/>
+    <text x="410" y="272" text-anchor="middle" font-weight="650">api</text>
+    <text x="410" y="296" text-anchor="middle" fill="#1e1b4b" font-size="13">FastAPI, stateless, N</text>
+    <text x="410" y="314" text-anchor="middle" fill="#1e1b4b" font-size="13">message + job in one</text>
+    <text x="410" y="332" text-anchor="middle" fill="#1e1b4b" font-size="13">transaction; WebSockets;</text>
+    <text x="410" y="350" text-anchor="middle" fill="#1e1b4b" font-size="13">playground, drafts</text>
+
+    <rect x="310" y="436" width="200" height="152" rx="12" fill="#818cf8"/>
+    <text x="410" y="472" text-anchor="middle" font-weight="650" fill="#ffffff">worker</text>
+    <text x="410" y="496" text-anchor="middle" fill="#eef2ff" font-size="13">N replicas, SKIP LOCKED</text>
+    <text x="410" y="514" text-anchor="middle" fill="#eef2ff" font-size="13">ai.reply, kb.ingest,</text>
+    <text x="410" y="532" text-anchor="middle" fill="#eef2ff" font-size="13">mail.reply, webhooks,</text>
+    <text x="410" y="550" text-anchor="middle" fill="#eef2ff" font-size="13">SLA, rollups, gaps</text>
+
+    <!-- data -->
+    <rect x="620" y="60" width="240" height="150" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="740" y="94" text-anchor="middle" font-weight="650">Postgres + pgvector</text>
+    <text x="740" y="118" text-anchor="middle" fill="#475569" font-size="13">tickets, messages, customers</text>
+    <text x="740" y="136" text-anchor="middle" fill="#475569" font-size="13">chunks + HNSW, answer cache</text>
+    <text x="740" y="154" text-anchor="middle" fill="#475569" font-size="13">jobs outbox, ledger, budgets</text>
+    <text x="740" y="172" text-anchor="middle" fill="#475569" font-size="13">rollups, audit log</text>
+    <text x="740" y="194" text-anchor="middle" fill="#4f46e5" font-size="12" font-weight="600">NOTIFY wakes workers</text>
+
+    <rect x="620" y="236" width="240" height="88" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="740" y="268" text-anchor="middle" font-weight="650">Redis (optional)</text>
+    <text x="740" y="290" text-anchor="middle" fill="#475569" font-size="13">event fan-out, exact cache,</text>
+    <text x="740" y="308" text-anchor="middle" fill="#475569" font-size="13">rate limits</text>
+
+    <rect x="620" y="350" width="240" height="70" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="740" y="380" text-anchor="middle" font-weight="650">S3</text>
+    <text x="740" y="402" text-anchor="middle" fill="#475569" font-size="13">uploads, attachments</text>
+
+    <rect x="620" y="446" width="240" height="70" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="740" y="476" text-anchor="middle" font-weight="650">KMS</text>
+    <text x="740" y="498" text-anchor="middle" fill="#475569" font-size="13">seals provider keys, secrets</text>
+
+    <!-- outside -->
+    <rect x="950" y="60" width="210" height="150" rx="12" fill="#ede9fe"/>
+    <text x="1055" y="94" text-anchor="middle" font-weight="650">Model providers</text>
+    <text x="1055" y="118" text-anchor="middle" fill="#475569" font-size="13">extractive (no model)</text>
+    <text x="1055" y="136" text-anchor="middle" fill="#475569" font-size="13">Ollama (local)</text>
+    <text x="1055" y="154" text-anchor="middle" fill="#475569" font-size="13">OpenAI-compatible</text>
+    <text x="1055" y="172" text-anchor="middle" fill="#475569" font-size="13">Anthropic</text>
+    <text x="1055" y="194" text-anchor="middle" fill="#475569" font-size="12">embeddings local by default</text>
+
+    <rect x="950" y="266" width="210" height="76" rx="12" fill="#ede9fe"/>
+    <text x="1055" y="298" text-anchor="middle" font-weight="650">SMTP or SES</text>
+    <text x="1055" y="320" text-anchor="middle" fill="#475569" font-size="13">threaded replies, links</text>
+
+    <rect x="950" y="398" width="210" height="76" rx="12" fill="#ede9fe"/>
+    <text x="1055" y="430" text-anchor="middle" font-weight="650">Webhook receivers</text>
+    <text x="1055" y="452" text-anchor="middle" fill="#475569" font-size="13">signed, retried</text>
+
+    <rect x="950" y="512" width="210" height="76" rx="12" fill="#ede9fe"/>
+    <text x="1055" y="544" text-anchor="middle" font-weight="650">Crawled sites</text>
+    <text x="1055" y="566" text-anchor="middle" fill="#475569" font-size="13">URLs, sitemaps (SSRF guard)</text>
+  </g>
+
+  <g fill="none" stroke-width="2">
+    <!-- people to web / api -->
+    <path d="M230 90 L308 100" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M230 110 C270 130 270 250 308 262" stroke="#4f46e5" marker-end="url(#i)"/>
+    <path d="M230 194 C270 200 270 280 308 290" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M230 290 C262 270 270 170 308 150" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M230 386 C270 380 280 360 308 350" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M230 482 C280 470 280 190 308 168" stroke="#64748b" marker-end="url(#a)"/>
+    <!-- web to api -->
+    <path d="M410 176 L410 234" stroke="#64748b" marker-end="url(#a)"/>
+    <!-- api to data -->
+    <path d="M510 270 C560 250 570 150 618 140" stroke="#4f46e5" marker-end="url(#i)"/>
+    <path d="M510 290 L618 284" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M510 330 C560 340 570 380 618 385" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M510 360 C560 380 570 470 618 480" stroke="#64748b" marker-end="url(#a)"/>
+    <!-- worker to data -->
+    <path d="M512 470 C580 430 580 230 618 196" stroke="#4f46e5" marker-end="url(#i)"/>
+    <path d="M512 500 C590 480 600 340 618 316" stroke="#64748b" marker-end="url(#a)"/>
+    <!-- worker to outside -->
+    <path d="M512 520 C700 600 880 230 948 180" stroke="#4f46e5" marker-end="url(#i)"/>
+    <path d="M512 540 C720 610 880 340 948 320" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M512 560 C720 620 880 450 948 440" stroke="#64748b" marker-end="url(#a)"/>
+    <path d="M512 578 C720 630 880 560 948 552" stroke="#64748b" marker-end="url(#a)"/>
+  </g>
+  <g font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#475569">
+    <text x="248" y="88">loader</text>
+    <text x="236" y="150" fill="#4f46e5">widget API</text>
+    <text x="236" y="236">inbound</text>
+    <text x="524" y="206" fill="#4f46e5">one transaction</text>
+    <text x="524" y="300">publish</text>
+    <text x="556" y="426" fill="#4f46e5">claim, fenced write</text>
+  </g>
+  <text x="600" y="620" text-anchor="middle" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#64748b">Locally: Docker Compose with Floci (S3, KMS, SES) provisioned by Terraform, Mailpit and Ollama. On AWS: ECS Fargate, RDS, ElastiCache, S3, KMS, SES.</text>
+</svg>

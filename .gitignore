@@ -1,0 +1,65 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+*.log
+.DS_Store
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+apps/api/.data/
+
+# Environment: only the *.example files are ever committed
+.env
+.env.*
+!.env.example
+!**/.env.example
+!**/.env.aws.example
+
+# The demo site's widget key, written by `make demo`
+deploy/demo-site/site/config.js
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+backend.tf
+!backend.tf.example
+tfplan
+
+# Test and QA artifacts (the curated screenshots live in docs/assets)
+e2e/test-results/
+e2e/playwright-report/
+scripts/qa/output/
+playwright-report/
+test-results/
+
+# Local tool state
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.auth/
+*.tsbuildinfo
+.cache/
+
+# Local model weights (downloaded at run time into a Docker volume, never committed)
+*.onnx
+
+# Local backups (make backup)
+backups/

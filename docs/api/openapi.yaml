@@ -1,0 +1,6948 @@
+openapi: 3.1.0
+info:
+  title: Euron Open SupportDesk
+  description: "\nAPI of a self-hosted support desk whose AI agent answers from your own knowledge, hands\n\
+    the rest to people with context, and records what every answer cost.\n\n* Agents sign in with `POST\
+    \ /api/v1/auth/login` and send the session token as\n  `Authorization: Bearer <token>` (the web app\
+    \ uses an HttpOnly cookie instead).\n* Integrations use an API key from Settings > API keys: `Authorization:\
+    \ Bearer sdk_...`.\n  Read keys list and read conversations, customers and articles; write keys also\
+    \ open\n  conversations and reply.\n* The website widget, the customer portal, the help center and\
+    \ inbound email are public\n  endpoints, authenticated by visitor tokens, portal tokens and inbound\
+    \ tokens.\n* Live updates: WebSockets at `/ws/agent`, `/ws/widget/{ticket_id}` and\n  `/ws/portal/{ticket_id}`\
+    \ carry small \"changed\" events; fetch the data over REST.\n* Webhooks are signed: `X-SupportDesk-Signature:\
+    \ t=<unix>,v1=<hex HMAC-SHA256 of t.body>`.\n"
+  version: 0.1.0
+paths:
+  /api/v1/auth/login:
+    post:
+      tags:
+      - auth
+      summary: Sign in as an agent
+      operationId: login_api_v1_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/signup:
+    get:
+      tags:
+      - auth
+      summary: Whether new organisations may sign up
+      operationId: signup_status_api_v1_auth_signup_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupStatus'
+    post:
+      tags:
+      - auth
+      summary: Create an organisation and its owner account
+      operationId: signup_api_v1_auth_signup_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/invitations/{token}:
+    get:
+      tags:
+      - auth
+      summary: Who an invitation is for
+      operationId: preview_invitation_api_v1_auth_invitations__token__get
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Token
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationPreview'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/invitations/accept:
+    post:
+      tags:
+      - auth
+      summary: Accept an invitation
+      operationId: accept_invitation_api_v1_auth_invitations_accept_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitation'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - auth
+      summary: Sign out
+      description: 'Ends this session server-side too: the token is refused until it expires.'
+      operationId: logout_api_v1_auth_logout_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+  /api/v1/auth/session:
+    get:
+      tags:
+      - auth
+      summary: Who is signed in, if anyone
+      operationId: current_session_api_v1_auth_session_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionOut'
+  /api/v1/auth/me:
+    get:
+      tags:
+      - auth
+      summary: The signed-in agent
+      operationId: me_api_v1_auth_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+  /api/v1/auth/password:
+    post:
+      tags:
+      - auth
+      summary: Change your password
+      operationId: password_api_v1_auth_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/users:
+    get:
+      tags:
+      - agents
+      summary: Agents of this organisation
+      operationId: list_users_api_v1_users_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserOut'
+                type: array
+                title: Response List Users Api V1 Users Get
+  /api/v1/users/{user_id}:
+    patch:
+      tags:
+      - agents
+      summary: Change an agent's role, access or capacity
+      operationId: update_user_api_v1_users__user_id__patch
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/me:
+    patch:
+      tags:
+      - agents
+      summary: Change your name or availability
+      operationId: update_me_api_v1_me_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MePatch'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/invitations:
+    get:
+      tags:
+      - agents
+      summary: Pending invitations
+      operationId: list_invitations_api_v1_invitations_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/InvitationOut'
+                type: array
+                title: Response List Invitations Api V1 Invitations Get
+    post:
+      tags:
+      - agents
+      summary: Invite an agent by email (the link is also returned, once)
+      operationId: invite_api_v1_invitations_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationCreated'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/invitations/{invitation_id}:
+    delete:
+      tags:
+      - agents
+      summary: Withdraw an invitation
+      operationId: revoke_api_v1_invitations__invitation_id__delete
+      parameters:
+      - name: invitation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Invitation Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/org/settings:
+    get:
+      tags:
+      - organisation
+      summary: Organisation settings
+      operationId: get_settings_api_v1_org_settings_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsOut'
+    patch:
+      tags:
+      - organisation
+      summary: Change organisation settings
+      operationId: update_settings_api_v1_org_settings_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingsPatch'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/org/ai/test:
+    post:
+      tags:
+      - organisation
+      summary: Check the AI provider answers
+      operationId: test_ai_api_v1_org_ai_test_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiTestResult'
+  /api/v1/org/teams:
+    get:
+      tags:
+      - organisation
+      summary: Teams
+      operationId: list_teams_api_v1_org_teams_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TeamOut'
+                type: array
+                title: Response List Teams Api V1 Org Teams Get
+    post:
+      tags:
+      - organisation
+      summary: Create a team
+      operationId: create_team_api_v1_org_teams_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/org/teams/{team_id}:
+    put:
+      tags:
+      - organisation
+      summary: Rename a team or change its members
+      operationId: update_team_api_v1_org_teams__team_id__put
+      parameters:
+      - name: team_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Team Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - organisation
+      summary: Delete a team
+      operationId: delete_team_api_v1_org_teams__team_id__delete
+      parameters:
+      - name: team_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Team Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/org/prices:
+    get:
+      tags:
+      - organisation
+      summary: Model prices (USD per million tokens)
+      operationId: list_prices_api_v1_org_prices_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PriceOut'
+                type: array
+                title: Response List Prices Api V1 Org Prices Get
+    put:
+      tags:
+      - organisation
+      summary: Set the price of a model
+      operationId: set_price_api_v1_org_prices_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/org/prices/{price_id}:
+    delete:
+      tags:
+      - organisation
+      summary: Remove a custom price
+      operationId: delete_price_api_v1_org_prices__price_id__delete
+      parameters:
+      - name: price_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Price Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets:
+    get:
+      tags:
+      - conversations
+      summary: List conversations
+      operationId: list_tickets_api_v1_tickets_get
+      parameters:
+      - name: view
+        in: query
+        required: false
+        schema:
+          enum:
+          - all
+          - mine
+          - unassigned
+          - ai
+          - approvals
+          - escalated
+          - sla
+          - resolved
+          type: string
+          default: all
+          title: View
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - name: priority
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Priority
+      - name: channel
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      - name: assignee_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Assignee Id
+      - name: customer_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Customer Id
+      - name: tag
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tag
+      - name: q
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          description: 'Full-text search, or #123'
+          title: Q
+        description: 'Full-text search, or #123'
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cursor
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 30
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_TicketOut_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - conversations
+      summary: Open a conversation
+      operationId: create_ticket_api_v1_tickets_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/counts:
+    get:
+      tags:
+      - conversations
+      summary: Conversations per inbox view
+      operationId: counts_api_v1_tickets_counts_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ViewCounts'
+  /api/v1/tickets/{ticket_id}:
+    get:
+      tags:
+      - conversations
+      summary: A conversation with its messages
+      operationId: get_ticket_api_v1_tickets__ticket_id__get
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - conversations
+      summary: Change status, priority, assignee...
+      operationId: update_ticket_api_v1_tickets__ticket_id__patch
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketPatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/{ticket_id}/messages:
+    post:
+      tags:
+      - conversations
+      summary: Reply to the customer, or add an internal note
+      operationId: reply_api_v1_tickets__ticket_id__messages_post
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplyIn'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/bulk:
+    post:
+      tags:
+      - conversations
+      summary: Update many conversations at once
+      operationId: bulk_api_v1_tickets_bulk_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkPatch'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/messages/{message_id}/approve:
+    post:
+      tags:
+      - conversations
+      summary: Send an AI answer held for approval
+      operationId: approve_api_v1_messages__message_id__approve_post
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/messages/{message_id}/reject:
+    post:
+      tags:
+      - conversations
+      summary: Discard an AI answer or draft
+      operationId: reject_api_v1_messages__message_id__reject_post
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/{ticket_id}/draft:
+    post:
+      tags:
+      - conversations
+      summary: Draft a reply with AI
+      operationId: draft_api_v1_tickets__ticket_id__draft_post
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/attachments/{attachment_id}:
+    get:
+      tags:
+      - conversations
+      summary: Download an attachment
+      operationId: download_api_v1_attachments__attachment_id__get
+      parameters:
+      - name: attachment_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Attachment Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/macros:
+    get:
+      tags:
+      - conversations
+      summary: Canned replies
+      operationId: list_macros_api_v1_macros_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MacroOut'
+                type: array
+                title: Response List Macros Api V1 Macros Get
+    post:
+      tags:
+      - conversations
+      summary: Add a canned reply
+      operationId: create_macro_api_v1_macros_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MacroIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MacroOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/macros/{macro_id}:
+    put:
+      tags:
+      - conversations
+      summary: Edit a canned reply
+      operationId: update_macro_api_v1_macros__macro_id__put
+      parameters:
+      - name: macro_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Macro Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MacroIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MacroOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - conversations
+      summary: Delete a canned reply
+      operationId: delete_macro_api_v1_macros__macro_id__delete
+      parameters:
+      - name: macro_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Macro Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/sla-policies:
+    get:
+      tags:
+      - conversations
+      summary: Service level targets
+      operationId: list_sla_api_v1_sla_policies_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SlaPolicyOut'
+                type: array
+                title: Response List Sla Api V1 Sla Policies Get
+    put:
+      tags:
+      - conversations
+      summary: Replace the service level targets
+      operationId: put_sla_api_v1_sla_policies_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                $ref: '#/components/schemas/SlaPolicyIn'
+              type: array
+              title: Body
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SlaPolicyOut'
+                type: array
+                title: Response Put Sla Api V1 Sla Policies Put
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/customers:
+    get:
+      tags:
+      - customers
+      summary: Search customers
+      operationId: list_customers_api_v1_customers_get
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Q
+      - name: vip
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Vip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerOut'
+                title: Response List Customers Api V1 Customers Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/customers/{customer_id}:
+    get:
+      tags:
+      - customers
+      summary: A customer with their conversations
+      operationId: get_customer_api_v1_customers__customer_id__get
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - customers
+      summary: Edit a customer
+      operationId: update_customer_api_v1_customers__customer_id__patch
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Customer Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerPatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/customers/merge:
+    post:
+      tags:
+      - customers
+      summary: Merge a duplicate into another customer
+      operationId: merge_api_v1_customers_merge_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/inboxes:
+    get:
+      tags:
+      - channels
+      summary: Inboxes
+      operationId: list_inboxes_api_v1_inboxes_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/InboxOut'
+                type: array
+                title: Response List Inboxes Api V1 Inboxes Get
+    post:
+      tags:
+      - channels
+      summary: Add an inbox
+      operationId: create_inbox_api_v1_inboxes_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboxIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/inboxes/{inbox_id}:
+    patch:
+      tags:
+      - channels
+      summary: Change an inbox
+      operationId: update_inbox_api_v1_inboxes__inbox_id__patch
+      parameters:
+      - name: inbox_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Inbox Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboxPatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxSaved'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/{public_key}/session:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Start or resume a chat
+      operationId: widget_session_api_v1_widget__public_key__session_post
+      parameters:
+      - name: public_key
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Public Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WidgetSessionIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetSessionOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/{public_key}/frame-policy:
+    get:
+      tags:
+      - widget and portal (public)
+      summary: Sites allowed to embed this widget (for the frame's CSP)
+      operationId: frame_policy_api_v1_widget__public_key__frame_policy_get
+      parameters:
+      - name: public_key
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Public Key
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FramePolicy'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/messages:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Send a message
+      operationId: widget_send_api_v1_widget_messages_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WidgetMessageIn'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetConversation'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/tickets/{ticket_id}:
+    get:
+      tags:
+      - widget and portal (public)
+      summary: The visitor's conversation
+      operationId: widget_conversation_api_v1_widget_tickets__ticket_id__get
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetConversation'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/tickets/{ticket_id}/human:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Ask for a person
+      operationId: widget_human_api_v1_widget_tickets__ticket_id__human_post
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetConversation'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/messages/{message_id}/feedback:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Was this answer helpful?
+      operationId: widget_feedback_api_v1_widget_messages__message_id__feedback_post
+      parameters:
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/tickets/{ticket_id}/rating:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Rate the conversation
+      operationId: widget_rate_api_v1_widget_tickets__ticket_id__rating_post
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/widget/email:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Leave an email for follow-up
+      operationId: widget_email_api_v1_widget_email_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/channels/email/inbound/{token}:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Receive an email (raw RFC 822)
+      operationId: inbound_email_api_v1_channels_email_inbound__token__post
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Token
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portal/{slug}/link:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Email me a sign-in link
+      operationId: portal_link_api_v1_portal__slug__link_post
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortalLinkIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portal/{slug}/session:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Redeem a sign-in link
+      operationId: portal_session_api_v1_portal__slug__session_post
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortalTokenIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalSessionOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portal/{slug}/tickets:
+    get:
+      tags:
+      - widget and portal (public)
+      summary: My conversations
+      operationId: portal_tickets_api_v1_portal__slug__tickets_get
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortalTicket'
+                title: Response Portal Tickets Api V1 Portal  Slug  Tickets Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Open a ticket
+      operationId: portal_create_api_v1_portal__slug__tickets_post
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortalTicketIn'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalTicketDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portal/{slug}/tickets/{ticket_id}:
+    get:
+      tags:
+      - widget and portal (public)
+      summary: One of my conversations
+      operationId: portal_ticket_api_v1_portal__slug__tickets__ticket_id__get
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalTicketDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portal/{slug}/tickets/{ticket_id}/messages:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Reply
+      operationId: portal_reply_api_v1_portal__slug__tickets__ticket_id__messages_post
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortalReplyIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalTicketDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portal/{slug}/messages/{message_id}/feedback:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Was this answer helpful?
+      operationId: portal_feedback_api_v1_portal__slug__messages__message_id__feedback_post
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/portal/{slug}/tickets/{ticket_id}/rating:
+    post:
+      tags:
+      - widget and portal (public)
+      summary: Rate a conversation
+      operationId: portal_rate_api_v1_portal__slug__tickets__ticket_id__rating_post
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Ticket Id
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/stats:
+    get:
+      tags:
+      - knowledge
+      summary: Knowledge base at a glance
+      operationId: stats_api_v1_knowledge_stats_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeStats'
+  /api/v1/knowledge/sources:
+    get:
+      tags:
+      - knowledge
+      summary: Knowledge sources
+      operationId: list_sources_api_v1_knowledge_sources_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SourceOut'
+                type: array
+                title: Response List Sources Api V1 Knowledge Sources Get
+  /api/v1/knowledge/sources/upload:
+    post:
+      tags:
+      - knowledge
+      summary: Upload a file (PDF, DOCX, Markdown, text, HTML, FAQ CSV)
+      operationId: upload_api_v1_knowledge_sources_upload_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_api_v1_knowledge_sources_upload_post'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/sources/url:
+    post:
+      tags:
+      - knowledge
+      summary: Import a web page or a sitemap
+      operationId: add_url_api_v1_knowledge_sources_url_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrlIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/sources/{source_id}/reindex:
+    post:
+      tags:
+      - knowledge
+      summary: Index a source again
+      operationId: reindex_api_v1_knowledge_sources__source_id__reindex_post
+      parameters:
+      - name: source_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Source Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/sources/{source_id}:
+    delete:
+      tags:
+      - knowledge
+      summary: Remove a source and its chunks
+      operationId: delete_source_api_v1_knowledge_sources__source_id__delete
+      parameters:
+      - name: source_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Source Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/sources/{source_id}/chunks:
+    get:
+      tags:
+      - knowledge
+      summary: The indexed passages of a source
+      operationId: source_chunks_api_v1_knowledge_sources__source_id__chunks_get
+      parameters:
+      - name: source_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Source Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                title: Response Source Chunks Api V1 Knowledge Sources  Source Id  Chunks Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/articles:
+    get:
+      tags:
+      - knowledge
+      summary: Articles
+      operationId: list_articles_api_v1_knowledge_articles_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ArticleOut'
+                type: array
+                title: Response List Articles Api V1 Knowledge Articles Get
+    post:
+      tags:
+      - knowledge
+      summary: Write an article
+      operationId: create_article_api_v1_knowledge_articles_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/articles/{article_id}:
+    get:
+      tags:
+      - knowledge
+      summary: An article
+      operationId: get_article_api_v1_knowledge_articles__article_id__get
+      parameters:
+      - name: article_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Article Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - knowledge
+      summary: Edit or publish an article
+      operationId: update_article_api_v1_knowledge_articles__article_id__put
+      parameters:
+      - name: article_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Article Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - knowledge
+      summary: Delete an article
+      operationId: delete_article_api_v1_knowledge_articles__article_id__delete
+      parameters:
+      - name: article_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Article Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/knowledge/test:
+    post:
+      tags:
+      - knowledge
+      summary: Ask a test question (the real AI pipeline)
+      operationId: playground_api_v1_knowledge_test_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaygroundIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/help/{slug}:
+    get:
+      tags:
+      - help center (public)
+      summary: A help center's home
+      operationId: help_home_api_v1_help__slug__get
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelpCenter'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/help/{slug}/articles:
+    get:
+      tags:
+      - help center (public)
+      summary: Search or list published articles
+      operationId: help_articles_api_v1_help__slug__articles_get
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: q
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Q
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleBrief'
+                title: Response Help Articles Api V1 Help  Slug  Articles Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/help/{slug}/articles/{article_slug}:
+    get:
+      tags:
+      - help center (public)
+      summary: A published article
+      operationId: help_article_api_v1_help__slug__articles__article_slug__get
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: article_slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Article Slug
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/help/{slug}/articles/{article_slug}/feedback:
+    post:
+      tags:
+      - help center (public)
+      summary: Was this article helpful?
+      operationId: help_feedback_api_v1_help__slug__articles__article_slug__feedback_post
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Slug
+      - name: article_slug
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Article Slug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HelpfulIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/gaps:
+    get:
+      tags:
+      - knowledge gaps
+      summary: Knowledge gaps, most asked first
+      operationId: list_gaps_api_v1_gaps_get
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          default: open
+          title: Status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GapOut'
+                title: Response List Gaps Api V1 Gaps Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/gaps/{gap_id}:
+    get:
+      tags:
+      - knowledge gaps
+      summary: A gap with example questions
+      operationId: get_gap_api_v1_gaps__gap_id__get
+      parameters:
+      - name: gap_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Gap Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GapDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/gaps/{gap_id}/draft:
+    post:
+      tags:
+      - knowledge gaps
+      summary: Draft an article that closes this gap
+      operationId: draft_api_v1_gaps__gap_id__draft_post
+      parameters:
+      - name: gap_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Gap Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleDraft'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/gaps/{gap_id}/status:
+    post:
+      tags:
+      - knowledge gaps
+      summary: Dismiss or reopen a gap
+      operationId: set_status_api_v1_gaps__gap_id__status_post
+      parameters:
+      - name: gap_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Gap Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GapStatusIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GapOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/analytics/overview:
+    get:
+      tags:
+      - analytics
+      summary: Volume, response times, AI resolution, CSAT and cost
+      operationId: overview_api_v1_analytics_overview_get
+      parameters:
+      - name: days
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 365
+          minimum: 1
+          default: 30
+          title: Days
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Overview'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/analytics/team:
+    get:
+      tags:
+      - analytics
+      summary: Workload and replies per agent
+      operationId: team_api_v1_analytics_team_get
+      parameters:
+      - name: days
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 365
+          minimum: 1
+          default: 30
+          title: Days
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamMember'
+                title: Response Team Api V1 Analytics Team Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/analytics/costs:
+    get:
+      tags:
+      - analytics
+      summary: The token ledger by purpose and model, and budget usage
+      operationId: costs_api_v1_analytics_costs_get
+      parameters:
+      - name: days
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 365
+          minimum: 1
+          default: 30
+          title: Days
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Costs'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/analytics/export.csv:
+    get:
+      tags:
+      - analytics
+      summary: Daily rollups as CSV
+      operationId: export_api_v1_analytics_export_csv_get
+      parameters:
+      - name: days
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 365
+          minimum: 1
+          default: 90
+          title: Days
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/api-keys:
+    get:
+      tags:
+      - integrations
+      summary: API keys
+      operationId: list_keys_api_v1_api_keys_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApiKeyOut'
+                type: array
+                title: Response List Keys Api V1 Api Keys Get
+    post:
+      tags:
+      - integrations
+      summary: Create an API key
+      operationId: create_key_api_v1_api_keys_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyCreated'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/api-keys/{key_id}:
+    delete:
+      tags:
+      - integrations
+      summary: Revoke an API key
+      operationId: revoke_key_api_v1_api_keys__key_id__delete
+      parameters:
+      - name: key_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Key Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/webhooks:
+    get:
+      tags:
+      - integrations
+      summary: Webhooks
+      operationId: list_webhooks_api_v1_webhooks_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/WebhookOut'
+                type: array
+                title: Response List Webhooks Api V1 Webhooks Get
+    post:
+      tags:
+      - integrations
+      summary: Add a webhook
+      operationId: create_webhook_api_v1_webhooks_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookCreated'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/webhooks/events:
+    get:
+      tags:
+      - integrations
+      summary: Events a webhook can subscribe to
+      operationId: webhook_events_api_v1_webhooks_events_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                type: array
+                title: Response Webhook Events Api V1 Webhooks Events Get
+  /api/v1/webhooks/{webhook_id}:
+    patch:
+      tags:
+      - integrations
+      summary: Change or re-enable a webhook
+      operationId: update_webhook_api_v1_webhooks__webhook_id__patch
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Webhook Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - integrations
+      summary: Delete a webhook
+      operationId: delete_webhook_api_v1_webhooks__webhook_id__delete
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Webhook Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/webhooks/{webhook_id}/test:
+    post:
+      tags:
+      - integrations
+      summary: Send a ping delivery
+      operationId: test_webhook_api_v1_webhooks__webhook_id__test_post
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Webhook Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ack'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/webhooks/{webhook_id}/deliveries:
+    get:
+      tags:
+      - integrations
+      summary: Recent deliveries
+      operationId: deliveries_api_v1_webhooks__webhook_id__deliveries_get
+      parameters:
+      - name: webhook_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Webhook Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeliveryOut'
+                title: Response Deliveries Api V1 Webhooks  Webhook Id  Deliveries Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/audit:
+    get:
+      tags:
+      - audit
+      summary: Append-only audit log
+      operationId: list_audit_api_v1_audit_get
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cursor
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: action
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Action
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_AuditOut_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /healthz:
+    get:
+      tags:
+      - system
+      summary: Liveness
+      operationId: healthz_healthz_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Healthz Healthz Get
+  /health:
+    get:
+      tags:
+      - system
+      summary: Liveness (alias of /healthz)
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Health Health Get
+  /readyz:
+    get:
+      tags:
+      - system
+      summary: 'Readiness: Postgres reachable (Redis reported too)'
+      operationId: readyz_readyz_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                type: object
+                title: Response Readyz Readyz Get
+  /api/v1/system:
+    get:
+      tags:
+      - system
+      - system
+      summary: Deployment status
+      operationId: system_api_v1_system_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemInfo'
+components:
+  schemas:
+    AcceptInvitation:
+      properties:
+        token:
+          type: string
+          maxLength: 200
+          minLength: 10
+          title: Token
+        name:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Name
+        password:
+          type: string
+          maxLength: 256
+          minLength: 10
+          title: Password
+      type: object
+      required:
+      - token
+      - name
+      - password
+      title: AcceptInvitation
+    Ack:
+      properties:
+        ok:
+          type: boolean
+          title: Ok
+          default: true
+        message:
+          type: string
+          title: Message
+          default: ''
+      type: object
+      title: Ack
+    AiConfig:
+      properties:
+        provider:
+          type: string
+          enum:
+          - extractive
+          - ollama
+          - openai
+          - anthropic
+          title: Provider
+          default: extractive
+        base_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Base Url
+          description: Endpoint for ollama, openai (any compatible server) or anthropic
+        answer_model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Answer Model
+        triage_model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Triage Model
+          description: A cheaper model for classification and summaries (model routing)
+        llm_triage:
+          type: boolean
+          title: Llm Triage
+          default: true
+        embedder:
+          type: string
+          enum:
+          - local
+          - ollama
+          - openai
+          title: Embedder
+          default: local
+        embed_base_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Embed Base Url
+        embed_model:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Embed Model
+        embed_dims:
+          anyOf:
+          - type: integer
+            maximum: 4096.0
+            minimum: 64.0
+          - type: 'null'
+          title: Embed Dims
+        temperature:
+          type: number
+          maximum: 1.5
+          minimum: 0.0
+          title: Temperature
+          default: 0.2
+        max_answer_tokens:
+          type: integer
+          maximum: 4000.0
+          minimum: 50.0
+          title: Max Answer Tokens
+          default: 400
+        context_tokens:
+          type: integer
+          maximum: 16000.0
+          minimum: 200.0
+          title: Context Tokens
+          default: 1800
+        top_k:
+          type: integer
+          maximum: 20.0
+          minimum: 1.0
+          title: Top K
+          default: 5
+      type: object
+      title: AiConfig
+      description: Which models answer, triage and embed. ``extractive`` needs no model at all.
+    AiTestResult:
+      properties:
+        ok:
+          type: boolean
+          title: Ok
+        provider:
+          type: string
+          title: Provider
+        model:
+          type: string
+          title: Model
+        latency_ms:
+          type: integer
+          title: Latency Ms
+        message:
+          type: string
+          title: Message
+        sample:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sample
+      type: object
+      required:
+      - ok
+      - provider
+      - model
+      - latency_ms
+      - message
+      title: AiTestResult
+    ApiKeyCreated:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        prefix:
+          type: string
+          title: Prefix
+        scope:
+          type: string
+          title: Scope
+        last_used_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Used At
+        revoked_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Revoked At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        key:
+          type: string
+          title: Key
+          description: 'Shown once. Send it as Authorization: Bearer <key>'
+      type: object
+      required:
+      - id
+      - name
+      - prefix
+      - scope
+      - last_used_at
+      - revoked_at
+      - created_at
+      - key
+      title: ApiKeyCreated
+    ApiKeyIn:
+      properties:
+        name:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Name
+        scope:
+          type: string
+          enum:
+          - read
+          - write
+          title: Scope
+          default: read
+      type: object
+      required:
+      - name
+      title: ApiKeyIn
+    ApiKeyOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        prefix:
+          type: string
+          title: Prefix
+        scope:
+          type: string
+          title: Scope
+        last_used_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Used At
+        revoked_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Revoked At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - name
+      - prefix
+      - scope
+      - last_used_at
+      - revoked_at
+      - created_at
+      title: ApiKeyOut
+    ApproveIn:
+      properties:
+        body:
+          anyOf:
+          - type: string
+            maxLength: 50000
+          - type: 'null'
+          title: Body
+          description: Edited text to send instead
+      type: object
+      title: ApproveIn
+    ArticleBrief:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        title:
+          type: string
+          title: Title
+        slug:
+          type: string
+          title: Slug
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+        excerpt:
+          type: string
+          title: Excerpt
+        published_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Published At
+      type: object
+      required:
+      - id
+      - title
+      - slug
+      - category
+      - excerpt
+      - published_at
+      title: ArticleBrief
+    ArticleDraft:
+      properties:
+        title:
+          type: string
+          title: Title
+        body:
+          type: string
+          title: Body
+        source:
+          type: string
+          enum:
+          - model
+          - agent_replies
+          - none
+          title: Source
+          description: Where the text came from; none means no agent has answered these questions yet
+      type: object
+      required:
+      - title
+      - body
+      - source
+      title: ArticleDraft
+    ArticleIn:
+      properties:
+        title:
+          type: string
+          maxLength: 300
+          minLength: 1
+          title: Title
+        body:
+          type: string
+          maxLength: 100000
+          minLength: 1
+          title: Body
+        category:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: Category
+        status:
+          type: string
+          title: Status
+          default: draft
+        gap_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Gap Id
+          description: Close this knowledge gap when published
+      type: object
+      required:
+      - title
+      - body
+      title: ArticleIn
+    ArticleOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        title:
+          type: string
+          title: Title
+        slug:
+          type: string
+          title: Slug
+        body:
+          type: string
+          title: Body
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+        status:
+          type: string
+          title: Status
+        published_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Published At
+        views:
+          type: integer
+          title: Views
+        helpful_yes:
+          type: integer
+          title: Helpful Yes
+        helpful_no:
+          type: integer
+          title: Helpful No
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - title
+      - slug
+      - body
+      - category
+      - status
+      - published_at
+      - views
+      - helpful_yes
+      - helpful_no
+      - created_at
+      - updated_at
+      title: ArticleOut
+    AttachmentOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        message_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Message Id
+        filename:
+          type: string
+          title: Filename
+        content_type:
+          type: string
+          title: Content Type
+        size:
+          type: integer
+          title: Size
+      type: object
+      required:
+      - id
+      - message_id
+      - filename
+      - content_type
+      - size
+      title: AttachmentOut
+    AuditOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        at:
+          type: string
+          format: date-time
+          title: At
+        actor_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Actor Id
+        actor_email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Actor Email
+        action:
+          type: string
+          title: Action
+        target_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Type
+        target_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Id
+        details:
+          additionalProperties: true
+          type: object
+          title: Details
+        ip:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ip
+      type: object
+      required:
+      - id
+      - at
+      - actor_id
+      - actor_email
+      - action
+      - target_type
+      - target_id
+      - details
+      - ip
+      title: AuditOut
+    Body_upload_api_v1_knowledge_sources_upload_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+        title:
+          anyOf:
+          - type: string
+            maxLength: 300
+          - type: 'null'
+          title: Title
+      type: object
+      required:
+      - file
+      title: Body_upload_api_v1_knowledge_sources_upload_post
+    Brand:
+      properties:
+        company_name:
+          type: string
+          maxLength: 120
+          title: Company Name
+          default: Acme
+        support_email:
+          anyOf:
+          - type: string
+            maxLength: 320
+          - type: 'null'
+          title: Support Email
+        accent_color:
+          type: string
+          pattern: ^#[0-9a-fA-F]{6}$
+          title: Accent Color
+          default: '#4f46e5'
+        help_center_title:
+          type: string
+          maxLength: 120
+          title: Help Center Title
+          default: How can we help?
+        website:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Website
+      type: object
+      title: Brand
+    Budgets:
+      properties:
+        daily_tokens:
+          type: integer
+          minimum: 0.0
+          title: Daily Tokens
+          default: 0
+        monthly_tokens:
+          type: integer
+          minimum: 0.0
+          title: Monthly Tokens
+          default: 0
+        daily_cost_usd:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+          title: Daily Cost Usd
+          default: '0'
+        monthly_cost_usd:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+          title: Monthly Cost Usd
+          default: '0'
+        on_exhausted:
+          type: string
+          enum:
+          - extractive
+          - human
+          title: On Exhausted
+          description: 'When a budget is spent: answer extractively (no model) or hand over'
+          default: extractive
+      type: object
+      title: Budgets
+      description: Hard limits, checked atomically before every model call. 0 means unlimited.
+    BulkPatch:
+      properties:
+        ids:
+          items:
+            type: string
+            format: uuid
+          type: array
+          maxItems: 200
+          minItems: 1
+          title: Ids
+        status:
+          anyOf:
+          - type: string
+            enum:
+            - open
+            - pending
+            - resolved
+            - closed
+          - type: 'null'
+          title: Status
+        priority:
+          anyOf:
+          - type: string
+            enum:
+            - low
+            - normal
+            - high
+            - urgent
+          - type: 'null'
+          title: Priority
+        assignee_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Assignee Id
+        unassign:
+          type: boolean
+          title: Unassign
+          default: false
+        add_tags:
+          items:
+            type: string
+          type: array
+          maxItems: 10
+          title: Add Tags
+      type: object
+      required:
+      - ids
+      title: BulkPatch
+    BulkResult:
+      properties:
+        updated:
+          type: integer
+          title: Updated
+      type: object
+      required:
+      - updated
+      title: BulkResult
+    Citation:
+      properties:
+        chunk_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Chunk Id
+        source_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source Id
+        article_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Article Id
+        title:
+          type: string
+          title: Title
+        heading:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Heading
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        relevance:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Relevance
+      type: object
+      required:
+      - title
+      title: Citation
+    CostRow:
+      properties:
+        purpose:
+          type: string
+          title: Purpose
+        provider:
+          type: string
+          title: Provider
+        model:
+          type: string
+          title: Model
+        calls:
+          type: integer
+          title: Calls
+        input_tokens:
+          type: integer
+          title: Input Tokens
+        output_tokens:
+          type: integer
+          title: Output Tokens
+        cost_usd:
+          type: string
+          title: Cost Usd
+        cache_hits:
+          type: integer
+          title: Cache Hits
+        saved_cost_usd:
+          type: string
+          title: Saved Cost Usd
+        blocked:
+          type: integer
+          title: Blocked
+        errors:
+          type: integer
+          title: Errors
+        p50_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: P50 Ms
+      type: object
+      required:
+      - purpose
+      - provider
+      - model
+      - calls
+      - input_tokens
+      - output_tokens
+      - cost_usd
+      - cache_hits
+      - saved_cost_usd
+      - blocked
+      - errors
+      - p50_ms
+      title: CostRow
+    Costs:
+      properties:
+        rows:
+          items:
+            $ref: '#/components/schemas/CostRow'
+          type: array
+          title: Rows
+        usage:
+          additionalProperties:
+            $ref: '#/components/schemas/Usage'
+          type: object
+          title: Usage
+          description: today and month
+      type: object
+      required:
+      - rows
+      - usage
+      title: Costs
+    CustomerBrief:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        vip:
+          type: boolean
+          title: Vip
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - vip
+      title: CustomerBrief
+    CustomerDetail:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        external_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Id
+        vip:
+          type: boolean
+          title: Vip
+        attributes:
+          additionalProperties: true
+          type: object
+          title: Attributes
+        last_seen_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Seen At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        ticket_count:
+          type: integer
+          title: Ticket Count
+          default: 0
+        open_count:
+          type: integer
+          title: Open Count
+          default: 0
+        tickets:
+          items:
+            $ref: '#/components/schemas/TicketOut'
+          type: array
+          title: Tickets
+        csat_avg:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Csat Avg
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - external_id
+      - vip
+      - attributes
+      - last_seen_at
+      - created_at
+      - tickets
+      - csat_avg
+      title: CustomerDetail
+    CustomerOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        external_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: External Id
+        vip:
+          type: boolean
+          title: Vip
+        attributes:
+          additionalProperties: true
+          type: object
+          title: Attributes
+        last_seen_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Seen At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        ticket_count:
+          type: integer
+          title: Ticket Count
+          default: 0
+        open_count:
+          type: integer
+          title: Open Count
+          default: 0
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - external_id
+      - vip
+      - attributes
+      - last_seen_at
+      - created_at
+      title: CustomerOut
+    CustomerPatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Name
+        email:
+          anyOf:
+          - type: string
+            maxLength: 320
+            pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          - type: 'null'
+          title: Email
+        vip:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Vip
+        attributes:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Attributes
+      type: object
+      title: CustomerPatch
+    DayPoint:
+      properties:
+        day:
+          type: string
+          title: Day
+        created:
+          type: integer
+          title: Created
+        resolved:
+          type: integer
+          title: Resolved
+        ai_resolved:
+          type: integer
+          title: Ai Resolved
+        escalated:
+          type: integer
+          title: Escalated
+        cost_usd:
+          type: string
+          title: Cost Usd
+      type: object
+      required:
+      - day
+      - created
+      - resolved
+      - ai_resolved
+      - escalated
+      - cost_usd
+      title: DayPoint
+    DeliveryOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        event:
+          type: string
+          title: Event
+        status:
+          type: string
+          title: Status
+        attempts:
+          type: integer
+          title: Attempts
+        response_status:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Response Status
+        response_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Response Ms
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        delivered_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Delivered At
+      type: object
+      required:
+      - id
+      - event
+      - status
+      - attempts
+      - response_status
+      - response_ms
+      - error
+      - created_at
+      - delivered_at
+      title: DeliveryOut
+    DraftIn:
+      properties:
+        tone:
+          type: string
+          enum:
+          - friendly
+          - formal
+          - concise
+          - empathetic
+          title: Tone
+          default: friendly
+        instructions:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Instructions
+      type: object
+      title: DraftIn
+    DraftOut:
+      properties:
+        body:
+          type: string
+          title: Body
+        citations:
+          items:
+            $ref: '#/components/schemas/Citation'
+          type: array
+          title: Citations
+        grounded:
+          type: boolean
+          title: Grounded
+        method:
+          type: string
+          title: Method
+        tokens:
+          type: integer
+          title: Tokens
+        cost_usd:
+          anyOf:
+          - type: number
+          - type: string
+          title: Cost Usd
+      type: object
+      required:
+      - body
+      - citations
+      - grounded
+      - method
+      - tokens
+      - cost_usd
+      title: DraftOut
+    EmailIn:
+      properties:
+        email:
+          type: string
+          maxLength: 320
+          pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          title: Email
+        name:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Name
+      type: object
+      required:
+      - email
+      title: EmailIn
+    EventOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        type:
+          type: string
+          title: Type
+        actor_type:
+          type: string
+          title: Actor Type
+        actor_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Actor Id
+        data:
+          additionalProperties: true
+          type: object
+          title: Data
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - type
+      - actor_type
+      - actor_id
+      - data
+      - created_at
+      title: EventOut
+    FeedbackIn:
+      properties:
+        helpful:
+          type: boolean
+          title: Helpful
+      type: object
+      required:
+      - helpful
+      title: FeedbackIn
+    FramePolicy:
+      properties:
+        frame_ancestors:
+          items:
+            type: string
+          type: array
+          title: Frame Ancestors
+      type: object
+      required:
+      - frame_ancestors
+      title: FramePolicy
+    GapDetail:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        title:
+          type: string
+          title: Title
+        status:
+          type: string
+          title: Status
+        question_count:
+          type: integer
+          title: Question Count
+        last_seen_at:
+          type: string
+          format: date-time
+          title: Last Seen At
+        article_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Article Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        questions:
+          items:
+            $ref: '#/components/schemas/GapQuestionOut'
+          type: array
+          title: Questions
+        replies:
+          items:
+            type: string
+          type: array
+          title: Replies
+      type: object
+      required:
+      - id
+      - title
+      - status
+      - question_count
+      - last_seen_at
+      - article_id
+      - created_at
+      - questions
+      - replies
+      title: GapDetail
+    GapOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        title:
+          type: string
+          title: Title
+        status:
+          type: string
+          title: Status
+        question_count:
+          type: integer
+          title: Question Count
+        last_seen_at:
+          type: string
+          format: date-time
+          title: Last Seen At
+        article_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Article Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - title
+      - status
+      - question_count
+      - last_seen_at
+      - article_id
+      - created_at
+      title: GapOut
+    GapQuestionOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        question:
+          type: string
+          title: Question
+        reason:
+          type: string
+          title: Reason
+        ticket_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Ticket Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - question
+      - reason
+      - ticket_id
+      - created_at
+      title: GapQuestionOut
+    GapStatusIn:
+      properties:
+        status:
+          type: string
+          enum:
+          - open
+          - dismissed
+          title: Status
+      type: object
+      required:
+      - status
+      title: GapStatusIn
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HelpCenter:
+      properties:
+        org_name:
+          type: string
+          title: Org Name
+        slug:
+          type: string
+          title: Slug
+        title:
+          type: string
+          title: Title
+        accent_color:
+          type: string
+          title: Accent Color
+        widget_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Widget Key
+        categories:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Categories
+        popular:
+          items:
+            $ref: '#/components/schemas/ArticleBrief'
+          type: array
+          title: Popular
+      type: object
+      required:
+      - org_name
+      - slug
+      - title
+      - accent_color
+      - widget_key
+      - categories
+      - popular
+      title: HelpCenter
+    HelpfulIn:
+      properties:
+        helpful:
+          type: boolean
+          title: Helpful
+      type: object
+      required:
+      - helpful
+      title: HelpfulIn
+    InboundOut:
+      properties:
+        outcome:
+          type: string
+          title: Outcome
+        ticket_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Ticket Id
+      type: object
+      required:
+      - outcome
+      - ticket_id
+      title: InboundOut
+    InboxIn:
+      properties:
+        name:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Name
+        channel:
+          type: string
+          title: Channel
+      type: object
+      required:
+      - name
+      - channel
+      title: InboxIn
+    InboxOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        channel:
+          type: string
+          title: Channel
+        public_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Public Key
+        allowed_origins:
+          items:
+            type: string
+          type: array
+          title: Allowed Origins
+        appearance:
+          additionalProperties: true
+          type: object
+          title: Appearance
+        identity_required:
+          type: boolean
+          title: Identity Required
+        identity_secret_set:
+          type: boolean
+          title: Identity Secret Set
+        email_address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email Address
+        inbound_configured:
+          type: boolean
+          title: Inbound Configured
+        team_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Team Id
+        ai_enabled:
+          type: boolean
+          title: Ai Enabled
+        active:
+          type: boolean
+          title: Active
+        snippet:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Snippet
+        inbound_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Inbound Url
+      type: object
+      required:
+      - id
+      - name
+      - channel
+      - public_key
+      - allowed_origins
+      - appearance
+      - identity_required
+      - identity_secret_set
+      - email_address
+      - inbound_configured
+      - team_id
+      - ai_enabled
+      - active
+      title: InboxOut
+    InboxPatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+            maxLength: 80
+            minLength: 1
+          - type: 'null'
+          title: Name
+        allowed_origins:
+          anyOf:
+          - items:
+              type: string
+            type: array
+            maxItems: 50
+          - type: 'null'
+          title: Allowed Origins
+        appearance:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Appearance
+        identity_required:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Identity Required
+        email_address:
+          anyOf:
+          - type: string
+            maxLength: 320
+            pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          - type: 'null'
+          title: Email Address
+        team_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Team Id
+        ai_enabled:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Ai Enabled
+        active:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Active
+        rotate_identity_secret:
+          type: boolean
+          title: Rotate Identity Secret
+          default: false
+        rotate_inbound_token:
+          type: boolean
+          title: Rotate Inbound Token
+          default: false
+      type: object
+      title: InboxPatch
+    InboxSaved:
+      properties:
+        inbox:
+          $ref: '#/components/schemas/InboxOut'
+        secret:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Secret
+          description: A newly generated secret or token, shown once
+      type: object
+      required:
+      - inbox
+      title: InboxSaved
+    InvitationCreated:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        email:
+          type: string
+          title: Email
+        role:
+          type: string
+          title: Role
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+        accepted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Accepted At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        invite_url:
+          type: string
+          title: Invite Url
+          description: 'Shown once: share it if email is not set up'
+      type: object
+      required:
+      - id
+      - email
+      - role
+      - expires_at
+      - accepted_at
+      - created_at
+      - invite_url
+      title: InvitationCreated
+    InvitationOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        email:
+          type: string
+          title: Email
+        role:
+          type: string
+          title: Role
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+        accepted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Accepted At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - email
+      - role
+      - expires_at
+      - accepted_at
+      - created_at
+      title: InvitationOut
+    InvitationPreview:
+      properties:
+        email:
+          type: string
+          title: Email
+        role:
+          type: string
+          title: Role
+        org_name:
+          type: string
+          title: Org Name
+      type: object
+      required:
+      - email
+      - role
+      - org_name
+      title: InvitationPreview
+    InviteIn:
+      properties:
+        email:
+          type: string
+          maxLength: 320
+          pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          title: Email
+        role:
+          type: string
+          enum:
+          - agent
+          - admin
+          title: Role
+          default: agent
+      type: object
+      required:
+      - email
+      title: InviteIn
+    KnowledgeStats:
+      properties:
+        sources:
+          type: integer
+          title: Sources
+        ready:
+          type: integer
+          title: Ready
+        failed:
+          type: integer
+          title: Failed
+        processing:
+          type: integer
+          title: Processing
+        articles:
+          type: integer
+          title: Articles
+        published:
+          type: integer
+          title: Published
+        chunks:
+          type: integer
+          title: Chunks
+        kb_version:
+          type: integer
+          title: Kb Version
+        embedder:
+          type: string
+          title: Embedder
+      type: object
+      required:
+      - sources
+      - ready
+      - failed
+      - processing
+      - articles
+      - published
+      - chunks
+      - kb_version
+      - embedder
+      title: KnowledgeStats
+    LoginRequest:
+      properties:
+        email:
+          type: string
+          maxLength: 320
+          pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          title: Email
+        password:
+          type: string
+          maxLength: 256
+          minLength: 1
+          title: Password
+      type: object
+      required:
+      - email
+      - password
+      title: LoginRequest
+    MacroIn:
+      properties:
+        title:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Title
+        body:
+          type: string
+          maxLength: 20000
+          minLength: 1
+          title: Body
+        actions:
+          additionalProperties: true
+          type: object
+          title: Actions
+      type: object
+      required:
+      - title
+      - body
+      title: MacroIn
+    MacroOut:
+      properties:
+        title:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Title
+        body:
+          type: string
+          maxLength: 20000
+          minLength: 1
+          title: Body
+        actions:
+          additionalProperties: true
+          type: object
+          title: Actions
+        id:
+          type: string
+          format: uuid
+          title: Id
+        uses:
+          type: integer
+          title: Uses
+      type: object
+      required:
+      - title
+      - body
+      - id
+      - uses
+      title: MacroOut
+    MePatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+            maxLength: 120
+            minLength: 1
+          - type: 'null'
+          title: Name
+        availability:
+          anyOf:
+          - type: string
+            enum:
+            - online
+            - away
+            - offline
+          - type: 'null'
+          title: Availability
+      type: object
+      title: MePatch
+    MergeIn:
+      properties:
+        keep_id:
+          type: string
+          format: uuid
+          title: Keep Id
+        drop_id:
+          type: string
+          format: uuid
+          title: Drop Id
+      type: object
+      required:
+      - keep_id
+      - drop_id
+      title: MergeIn
+    MessageOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        author_type:
+          type: string
+          title: Author Type
+        author_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Author Id
+        author_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Author Name
+        kind:
+          type: string
+          title: Kind
+        status:
+          type: string
+          title: Status
+        body:
+          type: string
+          title: Body
+        citations:
+          items:
+            $ref: '#/components/schemas/Citation'
+          type: array
+          title: Citations
+        feedback:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Feedback
+        delivery:
+          additionalProperties: true
+          type: object
+          title: Delivery
+        ai_meta:
+          additionalProperties: true
+          type: object
+          title: Ai Meta
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        sent_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Sent At
+      type: object
+      required:
+      - id
+      - author_type
+      - author_id
+      - kind
+      - status
+      - body
+      - citations
+      - feedback
+      - delivery
+      - ai_meta
+      - created_at
+      - sent_at
+      title: MessageOut
+    OrgOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        slug:
+          type: string
+          title: Slug
+        kb_version:
+          type: integer
+          title: Kb Version
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - name
+      - slug
+      - kb_version
+      - created_at
+      title: OrgOut
+    Overview:
+      properties:
+        days:
+          type: integer
+          title: Days
+        totals:
+          $ref: '#/components/schemas/Totals'
+        ai_resolution_rate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Ai Resolution Rate
+          description: AI resolutions over all resolutions
+        escalation_rate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Escalation Rate
+        deflection_rate:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Deflection Rate
+          description: AI resolutions over all conversations
+        csat_avg:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Csat Avg
+        frt_median_s:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Frt Median S
+        frt_p90_s:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Frt P90 S
+        resolution_median_s:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Resolution Median S
+        resolution_p90_s:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Resolution P90 S
+        human_frt_median_s:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Human Frt Median S
+          description: From handover to the first human reply
+        cost_per_ai_resolution_usd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cost Per Ai Resolution Usd
+        saas_price_per_resolution_usd:
+          type: string
+          title: Saas Price Per Resolution Usd
+        saas_equivalent_usd:
+          type: string
+          title: Saas Equivalent Usd
+        series:
+          items:
+            $ref: '#/components/schemas/DayPoint'
+          type: array
+          title: Series
+        breakdown:
+          additionalProperties:
+            additionalProperties:
+              type: integer
+            type: object
+          type: object
+          title: Breakdown
+          description: by_channel, by_category, sentiment and escalation_reasons counts
+      type: object
+      required:
+      - days
+      - totals
+      - ai_resolution_rate
+      - escalation_rate
+      - deflection_rate
+      - csat_avg
+      - frt_median_s
+      - frt_p90_s
+      - resolution_median_s
+      - resolution_p90_s
+      - human_frt_median_s
+      - cost_per_ai_resolution_usd
+      - saas_price_per_resolution_usd
+      - saas_equivalent_usd
+      - series
+      - breakdown
+      title: Overview
+    Page_AuditOut_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AuditOut'
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Cursor
+          description: Pass as ?cursor= to fetch the next page
+      type: object
+      required:
+      - items
+      title: Page[AuditOut]
+    Page_TicketOut_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TicketOut'
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Cursor
+          description: Pass as ?cursor= to fetch the next page
+      type: object
+      required:
+      - items
+      title: Page[TicketOut]
+    Passage:
+      properties:
+        chunk_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Chunk Id
+        title:
+          type: string
+          title: Title
+        heading:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Heading
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        text:
+          type: string
+          title: Text
+        relevance:
+          type: number
+          title: Relevance
+        similarity:
+          type: number
+          title: Similarity
+        coverage:
+          type: number
+          title: Coverage
+      type: object
+      required:
+      - chunk_id
+      - title
+      - heading
+      - url
+      - text
+      - relevance
+      - similarity
+      - coverage
+      title: Passage
+    PasswordChange:
+      properties:
+        current_password:
+          type: string
+          maxLength: 256
+          minLength: 1
+          title: Current Password
+        new_password:
+          type: string
+          maxLength: 256
+          minLength: 10
+          title: New Password
+      type: object
+      required:
+      - current_password
+      - new_password
+      title: PasswordChange
+    PlaygroundIn:
+      properties:
+        question:
+          type: string
+          maxLength: 2000
+          minLength: 2
+          title: Question
+      type: object
+      required:
+      - question
+      title: PlaygroundIn
+    PlaygroundOut:
+      properties:
+        question:
+          type: string
+          title: Question
+        action:
+          type: string
+          title: Action
+        reasons:
+          items:
+            type: string
+          type: array
+          title: Reasons
+        answer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Answer
+        grounded:
+          type: boolean
+          title: Grounded
+        method:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Method
+        citations:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Citations
+        passages:
+          items:
+            $ref: '#/components/schemas/Passage'
+          type: array
+          title: Passages
+        threshold:
+          type: number
+          title: Threshold
+        triage:
+          additionalProperties: true
+          type: object
+          title: Triage
+        tokens:
+          type: integer
+          title: Tokens
+        cost_usd:
+          anyOf:
+          - type: number
+          - type: string
+          title: Cost Usd
+        timings_ms:
+          additionalProperties:
+            type: number
+          type: object
+          title: Timings Ms
+        provider:
+          type: string
+          title: Provider
+      type: object
+      required:
+      - question
+      - action
+      - reasons
+      - answer
+      - grounded
+      - method
+      - citations
+      - passages
+      - threshold
+      - triage
+      - tokens
+      - cost_usd
+      - timings_ms
+      - provider
+      title: PlaygroundOut
+    Policy:
+      properties:
+        mode:
+          type: string
+          enum:
+          - 'off'
+          - draft
+          - approval
+          - auto
+          title: Mode
+          description: 'off: humans only. draft: AI suggests, agents send. approval: AI answers in-policy
+            questions, sensitive ones wait for approval. auto: like approval, but sensitive intents are
+            still always escalated'
+          default: approval
+        auto_categories:
+          items:
+            type: string
+          type: array
+          title: Auto Categories
+          description: Categories the AI may resolve without a person
+        min_relevance:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Min Relevance
+          description: A retrieved passage must score at least this to be cited
+          default: 0.5
+        sensitive_intents:
+          items:
+            type: string
+          type: array
+          title: Sensitive Intents
+        custom_sensitive_keywords:
+          items:
+            type: string
+          type: array
+          title: Custom Sensitive Keywords
+          description: Extra words that always need a person
+        escalate_negative_sentiment:
+          type: boolean
+          title: Escalate Negative Sentiment
+          default: true
+        escalate_vip:
+          type: boolean
+          title: Escalate Vip
+          default: true
+        max_unhelpful:
+          type: integer
+          maximum: 5.0
+          minimum: 0.0
+          title: Max Unhelpful
+          default: 1
+        max_ai_turns:
+          type: integer
+          maximum: 50.0
+          minimum: 1.0
+          title: Max Ai Turns
+          default: 6
+      type: object
+      title: Policy
+      description: When the AI may answer on its own. Decided by code, never by the model.
+    PortalLinkIn:
+      properties:
+        email:
+          type: string
+          maxLength: 320
+          pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          title: Email
+      type: object
+      required:
+      - email
+      title: PortalLinkIn
+    PortalReplyIn:
+      properties:
+        body:
+          type: string
+          maxLength: 20000
+          minLength: 1
+          title: Body
+      type: object
+      required:
+      - body
+      title: PortalReplyIn
+    PortalSessionOut:
+      properties:
+        token:
+          type: string
+          title: Token
+        customer_name:
+          type: string
+          title: Customer Name
+        customer_email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Customer Email
+      type: object
+      required:
+      - token
+      - customer_name
+      - customer_email
+      title: PortalSessionOut
+    PortalTicket:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        number:
+          type: integer
+          title: Number
+        subject:
+          type: string
+          title: Subject
+        status:
+          type: string
+          title: Status
+        channel:
+          type: string
+          title: Channel
+        preview:
+          type: string
+          title: Preview
+          default: ''
+        last_message_at:
+          type: string
+          format: date-time
+          title: Last Message At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - number
+      - subject
+      - status
+      - channel
+      - last_message_at
+      - created_at
+      title: PortalTicket
+    PortalTicketDetail:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        number:
+          type: integer
+          title: Number
+        subject:
+          type: string
+          title: Subject
+        status:
+          type: string
+          title: Status
+        channel:
+          type: string
+          title: Channel
+        preview:
+          type: string
+          title: Preview
+          default: ''
+        last_message_at:
+          type: string
+          format: date-time
+          title: Last Message At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        csat_score:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Csat Score
+        messages:
+          items:
+            $ref: '#/components/schemas/PublicMessage'
+          type: array
+          title: Messages
+      type: object
+      required:
+      - id
+      - number
+      - subject
+      - status
+      - channel
+      - last_message_at
+      - created_at
+      - csat_score
+      - messages
+      title: PortalTicketDetail
+    PortalTicketIn:
+      properties:
+        subject:
+          type: string
+          maxLength: 300
+          minLength: 1
+          title: Subject
+        body:
+          type: string
+          maxLength: 20000
+          minLength: 1
+          title: Body
+      type: object
+      required:
+      - subject
+      - body
+      title: PortalTicketIn
+    PortalTokenIn:
+      properties:
+        token:
+          type: string
+          maxLength: 200
+          minLength: 10
+          title: Token
+      type: object
+      required:
+      - token
+      title: PortalTokenIn
+    PriceIn:
+      properties:
+        provider:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Provider
+        model:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Model
+        input_per_mtok:
+          anyOf:
+          - type: number
+            maximum: 10000.0
+            minimum: 0.0
+          - type: string
+          title: Input Per Mtok
+        output_per_mtok:
+          anyOf:
+          - type: number
+            maximum: 10000.0
+            minimum: 0.0
+          - type: string
+          title: Output Per Mtok
+      type: object
+      required:
+      - provider
+      - model
+      - input_per_mtok
+      - output_per_mtok
+      title: PriceIn
+    PriceOut:
+      properties:
+        provider:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Provider
+        model:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Model
+        input_per_mtok:
+          anyOf:
+          - type: number
+            maximum: 10000.0
+            minimum: 0.0
+          - type: string
+          title: Input Per Mtok
+        output_per_mtok:
+          anyOf:
+          - type: number
+            maximum: 10000.0
+            minimum: 0.0
+          - type: string
+          title: Output Per Mtok
+        id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Id
+        default:
+          type: boolean
+          title: Default
+          default: false
+      type: object
+      required:
+      - provider
+      - model
+      - input_per_mtok
+      - output_per_mtok
+      title: PriceOut
+    PublicCitation:
+      properties:
+        title:
+          type: string
+          title: Title
+        heading:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Heading
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+      type: object
+      required:
+      - title
+      title: PublicCitation
+    PublicMessage:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        author_type:
+          type: string
+          title: Author Type
+        author_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Author Name
+        body:
+          type: string
+          title: Body
+        citations:
+          items:
+            $ref: '#/components/schemas/PublicCitation'
+          type: array
+          title: Citations
+        feedback:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Feedback
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - author_type
+      - body
+      - citations
+      - feedback
+      - created_at
+      title: PublicMessage
+      description: 'A message as the customer sees it: no AI metadata, delivery status or agent ids.'
+    RatingIn:
+      properties:
+        score:
+          type: integer
+          maximum: 5.0
+          minimum: 1.0
+          title: Score
+        comment:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+          title: Comment
+      type: object
+      required:
+      - score
+      title: RatingIn
+    ReplyIn:
+      properties:
+        body:
+          type: string
+          maxLength: 50000
+          minLength: 1
+          title: Body
+        note:
+          type: boolean
+          title: Note
+          description: 'Internal note: never shown to the customer'
+          default: false
+        status:
+          anyOf:
+          - type: string
+            enum:
+            - open
+            - pending
+            - resolved
+            - closed
+          - type: 'null'
+          title: Status
+          description: Status after sending (default pending)
+        macro_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Macro Id
+      type: object
+      required:
+      - body
+      title: ReplyIn
+    SessionOut:
+      properties:
+        user:
+          anyOf:
+          - $ref: '#/components/schemas/UserOut'
+          - type: 'null'
+        org_slug:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Org Slug
+        org_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Org Name
+      type: object
+      required:
+      - user
+      title: SessionOut
+    SettingsOut:
+      properties:
+        org:
+          $ref: '#/components/schemas/OrgOut'
+        brand:
+          $ref: '#/components/schemas/Brand'
+        ai:
+          $ref: '#/components/schemas/AiConfig'
+        ai_key_set:
+          type: boolean
+          title: Ai Key Set
+        policy:
+          $ref: '#/components/schemas/Policy'
+        budgets:
+          $ref: '#/components/schemas/Budgets'
+        token_saver:
+          $ref: '#/components/schemas/TokenSaver'
+        categories:
+          items:
+            type: string
+          type: array
+          title: Categories
+      type: object
+      required:
+      - org
+      - brand
+      - ai
+      - ai_key_set
+      - policy
+      - budgets
+      - token_saver
+      - categories
+      title: SettingsOut
+    SettingsPatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+            maxLength: 120
+            minLength: 1
+          - type: 'null'
+          title: Name
+        brand:
+          anyOf:
+          - $ref: '#/components/schemas/Brand'
+          - type: 'null'
+        ai:
+          anyOf:
+          - $ref: '#/components/schemas/AiConfig'
+          - type: 'null'
+        ai_api_key:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Ai Api Key
+          description: Write-only. Empty string clears the stored key
+        policy:
+          anyOf:
+          - $ref: '#/components/schemas/Policy'
+          - type: 'null'
+        budgets:
+          anyOf:
+          - $ref: '#/components/schemas/Budgets'
+          - type: 'null'
+        token_saver:
+          anyOf:
+          - $ref: '#/components/schemas/TokenSaver'
+          - type: 'null'
+        categories:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Categories
+      type: object
+      title: SettingsPatch
+    SignInOut:
+      properties:
+        user:
+          $ref: '#/components/schemas/UserOut'
+        org_slug:
+          type: string
+          title: Org Slug
+        session_token:
+          type: string
+          title: Session Token
+          description: Bearer token for API clients; browsers use the cookie
+        expires_in_s:
+          type: integer
+          title: Expires In S
+      type: object
+      required:
+      - user
+      - org_slug
+      - session_token
+      - expires_in_s
+      title: SignInOut
+    SignupRequest:
+      properties:
+        org_name:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Org Name
+          description: Your company or team
+        name:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Name
+        email:
+          type: string
+          maxLength: 320
+          pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          title: Email
+        password:
+          type: string
+          maxLength: 256
+          minLength: 10
+          title: Password
+      type: object
+      required:
+      - org_name
+      - name
+      - email
+      - password
+      title: SignupRequest
+    SignupStatus:
+      properties:
+        signup_enabled:
+          type: boolean
+          title: Signup Enabled
+      type: object
+      required:
+      - signup_enabled
+      title: SignupStatus
+    SlaPolicyIn:
+      properties:
+        priority:
+          type: string
+          enum:
+          - low
+          - normal
+          - high
+          - urgent
+          title: Priority
+        first_response_minutes:
+          type: integer
+          maximum: 43200.0
+          minimum: 1.0
+          title: First Response Minutes
+        resolution_minutes:
+          type: integer
+          maximum: 129600.0
+          minimum: 1.0
+          title: Resolution Minutes
+        enabled:
+          type: boolean
+          title: Enabled
+          default: true
+      type: object
+      required:
+      - priority
+      - first_response_minutes
+      - resolution_minutes
+      title: SlaPolicyIn
+    SlaPolicyOut:
+      properties:
+        priority:
+          type: string
+          enum:
+          - low
+          - normal
+          - high
+          - urgent
+          title: Priority
+        first_response_minutes:
+          type: integer
+          maximum: 43200.0
+          minimum: 1.0
+          title: First Response Minutes
+        resolution_minutes:
+          type: integer
+          maximum: 129600.0
+          minimum: 1.0
+          title: Resolution Minutes
+        enabled:
+          type: boolean
+          title: Enabled
+          default: true
+        id:
+          type: string
+          format: uuid
+          title: Id
+      type: object
+      required:
+      - priority
+      - first_response_minutes
+      - resolution_minutes
+      - id
+      title: SlaPolicyOut
+    SourceOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        kind:
+          type: string
+          title: Kind
+        title:
+          type: string
+          title: Title
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        filename:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Filename
+        size:
+          type: integer
+          title: Size
+        status:
+          type: string
+          title: Status
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+        pages:
+          type: integer
+          title: Pages
+        chunk_count:
+          type: integer
+          title: Chunk Count
+        version:
+          type: integer
+          title: Version
+        last_indexed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Indexed At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - kind
+      - title
+      - url
+      - filename
+      - size
+      - status
+      - error
+      - pages
+      - chunk_count
+      - version
+      - last_indexed_at
+      - created_at
+      title: SourceOut
+    SystemInfo:
+      properties:
+        version:
+          type: string
+          title: Version
+        environment:
+          type: string
+          title: Environment
+        storage:
+          type: string
+          title: Storage
+        key_mode:
+          type: string
+          title: Key Mode
+        cache:
+          type: string
+          title: Cache
+        mail:
+          type: string
+          title: Mail
+        embedder:
+          type: string
+          title: Embedder
+        redis:
+          type: boolean
+          title: Redis
+        jobs:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Jobs
+        live_connections:
+          type: integer
+          title: Live Connections
+      type: object
+      required:
+      - version
+      - environment
+      - storage
+      - key_mode
+      - cache
+      - mail
+      - embedder
+      - redis
+      - jobs
+      - live_connections
+      title: SystemInfo
+    TeamIn:
+      properties:
+        name:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Name
+        member_ids:
+          items:
+            type: string
+            format: uuid
+          type: array
+          maxItems: 500
+          title: Member Ids
+      type: object
+      required:
+      - name
+      title: TeamIn
+    TeamMember:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        availability:
+          type: string
+          title: Availability
+        capacity:
+          type: integer
+          title: Capacity
+        open:
+          type: integer
+          title: Open
+        resolved:
+          type: integer
+          title: Resolved
+        replies:
+          type: integer
+          title: Replies
+        csat:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Csat
+      type: object
+      required:
+      - id
+      - name
+      - availability
+      - capacity
+      - open
+      - resolved
+      - replies
+      - csat
+      title: TeamMember
+    TeamOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        member_ids:
+          items:
+            type: string
+            format: uuid
+          type: array
+          title: Member Ids
+      type: object
+      required:
+      - id
+      - name
+      - member_ids
+      title: TeamOut
+    TicketCreate:
+      properties:
+        customer_email:
+          anyOf:
+          - type: string
+            maxLength: 320
+            pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          - type: 'null'
+          title: Customer Email
+        customer_name:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Customer Name
+        customer_external_id:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Customer External Id
+        subject:
+          anyOf:
+          - type: string
+            maxLength: 300
+          - type: 'null'
+          title: Subject
+        body:
+          type: string
+          maxLength: 50000
+          minLength: 1
+          title: Body
+        priority:
+          anyOf:
+          - type: string
+            enum:
+            - low
+            - normal
+            - high
+            - urgent
+          - type: 'null'
+          title: Priority
+        tags:
+          items:
+            type: string
+          type: array
+          maxItems: 20
+          title: Tags
+        ai:
+          type: boolean
+          title: Ai
+          description: Let the AI answer first (as if the customer wrote in)
+          default: false
+      type: object
+      required:
+      - body
+      title: TicketCreate
+      description: Open a conversation on a customer's behalf (API, or an agent logging a call).
+    TicketDetail:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        number:
+          type: integer
+          title: Number
+        subject:
+          type: string
+          title: Subject
+        status:
+          type: string
+          title: Status
+        priority:
+          type: string
+          title: Priority
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+        sentiment:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sentiment
+        intent:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Intent
+        channel:
+          type: string
+          title: Channel
+        handled_by:
+          type: string
+          title: Handled By
+        ai_resolved:
+          type: boolean
+          title: Ai Resolved
+        escalation_reasons:
+          items:
+            type: string
+          type: array
+          title: Escalation Reasons
+        pending_approval:
+          type: boolean
+          title: Pending Approval
+        assignee_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Assignee Id
+        team_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Team Id
+        tags:
+          items:
+            type: string
+          type: array
+          title: Tags
+        customer:
+          $ref: '#/components/schemas/CustomerBrief'
+        preview:
+          type: string
+          title: Preview
+          default: ''
+        preview_author:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Preview Author
+        sla_state:
+          type: string
+          title: Sla State
+          default: none
+        sla_next_due_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Sla Next Due At
+        last_message_at:
+          type: string
+          format: date-time
+          title: Last Message At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Summary
+        language:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Language
+        csat_score:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Csat Score
+        csat_comment:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Csat Comment
+        first_response_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: First Response At
+        human_replied_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Human Replied At
+        resolved_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Resolved At
+        escalated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Escalated At
+        first_response_due_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: First Response Due At
+        resolution_due_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Resolution Due At
+        reopened_count:
+          type: integer
+          title: Reopened Count
+        ai_cost_usd:
+          anyOf:
+          - type: number
+          - type: string
+          title: Ai Cost Usd
+        ai_tokens:
+          type: integer
+          title: Ai Tokens
+        messages:
+          items:
+            $ref: '#/components/schemas/MessageOut'
+          type: array
+          title: Messages
+        events:
+          items:
+            $ref: '#/components/schemas/EventOut'
+          type: array
+          title: Events
+        attachments:
+          items:
+            $ref: '#/components/schemas/AttachmentOut'
+          type: array
+          title: Attachments
+      type: object
+      required:
+      - id
+      - number
+      - subject
+      - status
+      - priority
+      - category
+      - sentiment
+      - intent
+      - channel
+      - handled_by
+      - ai_resolved
+      - escalation_reasons
+      - pending_approval
+      - assignee_id
+      - team_id
+      - tags
+      - customer
+      - sla_next_due_at
+      - last_message_at
+      - created_at
+      - summary
+      - language
+      - csat_score
+      - csat_comment
+      - first_response_at
+      - human_replied_at
+      - resolved_at
+      - escalated_at
+      - first_response_due_at
+      - resolution_due_at
+      - reopened_count
+      - ai_cost_usd
+      - ai_tokens
+      - messages
+      - events
+      - attachments
+      title: TicketDetail
+    TicketOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        number:
+          type: integer
+          title: Number
+        subject:
+          type: string
+          title: Subject
+        status:
+          type: string
+          title: Status
+        priority:
+          type: string
+          title: Priority
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+        sentiment:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sentiment
+        intent:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Intent
+        channel:
+          type: string
+          title: Channel
+        handled_by:
+          type: string
+          title: Handled By
+        ai_resolved:
+          type: boolean
+          title: Ai Resolved
+        escalation_reasons:
+          items:
+            type: string
+          type: array
+          title: Escalation Reasons
+        pending_approval:
+          type: boolean
+          title: Pending Approval
+        assignee_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Assignee Id
+        team_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Team Id
+        tags:
+          items:
+            type: string
+          type: array
+          title: Tags
+        customer:
+          $ref: '#/components/schemas/CustomerBrief'
+        preview:
+          type: string
+          title: Preview
+          default: ''
+        preview_author:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Preview Author
+        sla_state:
+          type: string
+          title: Sla State
+          default: none
+        sla_next_due_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Sla Next Due At
+        last_message_at:
+          type: string
+          format: date-time
+          title: Last Message At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - number
+      - subject
+      - status
+      - priority
+      - category
+      - sentiment
+      - intent
+      - channel
+      - handled_by
+      - ai_resolved
+      - escalation_reasons
+      - pending_approval
+      - assignee_id
+      - team_id
+      - tags
+      - customer
+      - sla_next_due_at
+      - last_message_at
+      - created_at
+      title: TicketOut
+    TicketPatch:
+      properties:
+        status:
+          anyOf:
+          - type: string
+            enum:
+            - open
+            - pending
+            - resolved
+            - closed
+          - type: 'null'
+          title: Status
+        priority:
+          anyOf:
+          - type: string
+            enum:
+            - low
+            - normal
+            - high
+            - urgent
+          - type: 'null'
+          title: Priority
+        category:
+          anyOf:
+          - type: string
+            maxLength: 64
+          - type: 'null'
+          title: Category
+        tags:
+          anyOf:
+          - items:
+              type: string
+            type: array
+            maxItems: 20
+          - type: 'null'
+          title: Tags
+        assignee_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Assignee Id
+        team_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Team Id
+        subject:
+          anyOf:
+          - type: string
+            maxLength: 300
+          - type: 'null'
+          title: Subject
+        unassign:
+          type: boolean
+          title: Unassign
+          default: false
+        clear_team:
+          type: boolean
+          title: Clear Team
+          default: false
+      type: object
+      title: TicketPatch
+    TokenSaver:
+      properties:
+        exact_cache:
+          type: boolean
+          title: Exact Cache
+          default: true
+        semantic_cache:
+          type: boolean
+          title: Semantic Cache
+          default: true
+        semantic_threshold:
+          type: number
+          maximum: 1.0
+          minimum: 0.5
+          title: Semantic Threshold
+          default: 0.92
+        cache_ttl_hours:
+          type: integer
+          maximum: 8760.0
+          minimum: 1.0
+          title: Cache Ttl Hours
+          default: 336
+        history_turns:
+          type: integer
+          maximum: 40.0
+          minimum: 1.0
+          title: History Turns
+          default: 6
+      type: object
+      title: TokenSaver
+    Totals:
+      properties:
+        created:
+          type: integer
+          title: Created
+        resolved:
+          type: integer
+          title: Resolved
+        ai_resolved:
+          type: integer
+          title: Ai Resolved
+        escalated:
+          type: integer
+          title: Escalated
+        reopened:
+          type: integer
+          title: Reopened
+        csat_sum:
+          type: integer
+          title: Csat Sum
+        csat_count:
+          type: integer
+          title: Csat Count
+        messages_customer:
+          type: integer
+          title: Messages Customer
+        messages_agent:
+          type: integer
+          title: Messages Agent
+        messages_ai:
+          type: integer
+          title: Messages Ai
+        tokens:
+          type: integer
+          title: Tokens
+        cache_hits:
+          type: integer
+          title: Cache Hits
+        cost_usd:
+          type: string
+          title: Cost Usd
+        saved_cost_usd:
+          type: string
+          title: Saved Cost Usd
+      type: object
+      required:
+      - created
+      - resolved
+      - ai_resolved
+      - escalated
+      - reopened
+      - csat_sum
+      - csat_count
+      - messages_customer
+      - messages_agent
+      - messages_ai
+      - tokens
+      - cache_hits
+      - cost_usd
+      - saved_cost_usd
+      title: Totals
+    UrlIn:
+      properties:
+        url:
+          type: string
+          maxLength: 2000
+          minLength: 8
+          title: Url
+        sitemap:
+          type: boolean
+          title: Sitemap
+          default: false
+        title:
+          anyOf:
+          - type: string
+            maxLength: 300
+          - type: 'null'
+          title: Title
+      type: object
+      required:
+      - url
+      title: UrlIn
+    Usage:
+      properties:
+        tokens:
+          type: integer
+          title: Tokens
+        cost_usd:
+          type: string
+          title: Cost Usd
+        reserved_tokens:
+          type: integer
+          title: Reserved Tokens
+        blocked:
+          type: integer
+          title: Blocked
+      type: object
+      required:
+      - tokens
+      - cost_usd
+      - reserved_tokens
+      - blocked
+      title: Usage
+    UserOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        org_id:
+          type: string
+          format: uuid
+          title: Org Id
+        email:
+          type: string
+          title: Email
+        name:
+          type: string
+          title: Name
+        role:
+          type: string
+          title: Role
+        disabled:
+          type: boolean
+          title: Disabled
+        availability:
+          type: string
+          title: Availability
+        capacity:
+          type: integer
+          title: Capacity
+        last_seen_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Seen At
+        last_login_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Login At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - org_id
+      - email
+      - name
+      - role
+      - disabled
+      - availability
+      - capacity
+      - last_seen_at
+      - last_login_at
+      - created_at
+      title: UserOut
+    UserPatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+            maxLength: 120
+            minLength: 1
+          - type: 'null'
+          title: Name
+        role:
+          anyOf:
+          - type: string
+            enum:
+            - agent
+            - admin
+            - owner
+          - type: 'null'
+          title: Role
+        disabled:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Disabled
+        capacity:
+          anyOf:
+          - type: integer
+            maximum: 500.0
+            minimum: 0.0
+          - type: 'null'
+          title: Capacity
+      type: object
+      title: UserPatch
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    ViewCounts:
+      properties:
+        all:
+          type: integer
+          title: All
+        mine:
+          type: integer
+          title: Mine
+        unassigned:
+          type: integer
+          title: Unassigned
+        ai:
+          type: integer
+          title: Ai
+        approvals:
+          type: integer
+          title: Approvals
+        escalated:
+          type: integer
+          title: Escalated
+        sla:
+          type: integer
+          title: Sla
+      type: object
+      required:
+      - all
+      - mine
+      - unassigned
+      - ai
+      - approvals
+      - escalated
+      - sla
+      title: ViewCounts
+    WebhookCreated:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        url:
+          type: string
+          title: Url
+        events:
+          items:
+            type: string
+          type: array
+          title: Events
+        active:
+          type: boolean
+          title: Active
+        consecutive_failures:
+          type: integer
+          title: Consecutive Failures
+        disabled_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Disabled Reason
+        last_success_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Success At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        secret:
+          type: string
+          title: Secret
+          description: Shown once. Verify X-SupportDesk-Signature with it
+      type: object
+      required:
+      - id
+      - url
+      - events
+      - active
+      - consecutive_failures
+      - disabled_reason
+      - last_success_at
+      - created_at
+      - secret
+      title: WebhookCreated
+    WebhookIn:
+      properties:
+        url:
+          type: string
+          maxLength: 2000
+          minLength: 8
+          title: Url
+        events:
+          items:
+            type: string
+          type: array
+          maxItems: 5
+          minItems: 1
+          title: Events
+      type: object
+      required:
+      - url
+      - events
+      title: WebhookIn
+    WebhookOut:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        url:
+          type: string
+          title: Url
+        events:
+          items:
+            type: string
+          type: array
+          title: Events
+        active:
+          type: boolean
+          title: Active
+        consecutive_failures:
+          type: integer
+          title: Consecutive Failures
+        disabled_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Disabled Reason
+        last_success_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Success At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - url
+      - events
+      - active
+      - consecutive_failures
+      - disabled_reason
+      - last_success_at
+      - created_at
+      title: WebhookOut
+    WebhookPatch:
+      properties:
+        url:
+          anyOf:
+          - type: string
+            maxLength: 2000
+            minLength: 8
+          - type: 'null'
+          title: Url
+        events:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Events
+        active:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Active
+      type: object
+      title: WebhookPatch
+    WidgetConfig:
+      properties:
+        title:
+          type: string
+          title: Title
+        greeting:
+          type: string
+          title: Greeting
+        color:
+          type: string
+          title: Color
+        position:
+          type: string
+          title: Position
+        suggestions:
+          items:
+            type: string
+          type: array
+          title: Suggestions
+        launcher_label:
+          type: string
+          title: Launcher Label
+        company:
+          type: string
+          title: Company
+        agents_online:
+          type: boolean
+          title: Agents Online
+        ai_enabled:
+          type: boolean
+          title: Ai Enabled
+      type: object
+      required:
+      - title
+      - greeting
+      - color
+      - position
+      - suggestions
+      - launcher_label
+      - company
+      - agents_online
+      - ai_enabled
+      title: WidgetConfig
+    WidgetConversation:
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+          title: Ticket Id
+        number:
+          type: integer
+          title: Number
+        status:
+          type: string
+          title: Status
+        handled_by:
+          type: string
+          title: Handled By
+        agents_online:
+          type: boolean
+          title: Agents Online
+        messages:
+          items:
+            $ref: '#/components/schemas/PublicMessage'
+          type: array
+          title: Messages
+      type: object
+      required:
+      - ticket_id
+      - number
+      - status
+      - handled_by
+      - agents_online
+      - messages
+      title: WidgetConversation
+    WidgetMessageIn:
+      properties:
+        body:
+          type: string
+          maxLength: 5000
+          minLength: 1
+          title: Body
+        ticket_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Ticket Id
+      type: object
+      required:
+      - body
+      title: WidgetMessageIn
+    WidgetSessionIn:
+      properties:
+        token:
+          anyOf:
+          - type: string
+            maxLength: 2000
+          - type: 'null'
+          title: Token
+          description: A visitor token from an earlier session
+        external_id:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: External Id
+        email:
+          anyOf:
+          - type: string
+            maxLength: 320
+            pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          - type: 'null'
+          title: Email
+        name:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Name
+        signature:
+          anyOf:
+          - type: string
+            maxLength: 128
+          - type: 'null'
+          title: Signature
+          description: HMAC-SHA256(identity secret, external_id)
+        parent_origin:
+          anyOf:
+          - type: string
+            maxLength: 300
+          - type: 'null'
+          title: Parent Origin
+          description: The site embedding the widget
+      type: object
+      title: WidgetSessionIn
+    WidgetSessionOut:
+      properties:
+        token:
+          type: string
+          title: Token
+        customer_name:
+          type: string
+          title: Customer Name
+        customer_email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Customer Email
+        config:
+          $ref: '#/components/schemas/WidgetConfig'
+        ticket_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Ticket Id
+      type: object
+      required:
+      - token
+      - customer_name
+      - customer_email
+      - config
+      - ticket_id
+      title: WidgetSessionOut
+servers:
+- url: http://localhost:4830
+  description: Local (make up)

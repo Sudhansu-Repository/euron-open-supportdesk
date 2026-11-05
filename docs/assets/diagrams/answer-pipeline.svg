@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="t d">
+  <title id="t">SupportDesk answer pipeline</title>
+  <desc id="d">The decision flow of an AI turn. A customer message is stored together with its ai.reply job. The worker redacts secrets, answers small talk, triages with rules (a model may only add caution), and applies the policy gate, which can hand over at once. For a first question the exact and semantic caches may answer with zero tokens. Hybrid retrieval scores passages; nothing above the threshold means an honest handoff and a knowledge gap. The model generates under a reserved budget, or the extractive answerer quotes a passage. The answer must cite a passage above the threshold, and is screened for sensitive topics the customer did not raise. The final decision is send, hold for approval, draft for an agent, or escalate to a person.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker>
+  </defs>
+  <rect width="1200" height="800" rx="16" fill="#f8fafc"/>
+  <g font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" fill="#0f172a">
+    <rect x="90" y="40" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="64.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="69.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">1</text>
+    <text x="106" y="60" font-size="15" font-weight="650">Customer message stored</text>
+    <text x="106" y="78" font-size="12.5" fill="#475569">message + ai.reply job commit together; 2xx after commit</text>
+    <path d="M325.0 88 L325.0 98" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="90" y="100" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="124.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="129.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">2</text>
+    <text x="106" y="120" font-size="15" font-weight="650">Redact, small talk</text>
+    <text x="106" y="138" font-size="12.5" fill="#475569">cards and secrets removed before any model</text>
+    <path d="M325.0 148 L325.0 158" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M560 124.0 L616 124.0" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="620" y="106" width="430" height="36" rx="18" fill="#dcfce7"/>
+    <text x="638" y="129.0" font-size="13" fill="#166534">greeting or thanks: friendly line</text>
+    <rect x="90" y="160" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="184.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="189.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">3</text>
+    <text x="106" y="180" font-size="15" font-weight="650">Triage</text>
+    <text x="106" y="198" font-size="12.5" fill="#475569">rules always; model may only add caution</text>
+    <path d="M325.0 208 L325.0 218" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="90" y="220" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="244.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="249.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">4</text>
+    <text x="106" y="240" font-size="15" font-weight="650">Policy gate</text>
+    <text x="106" y="258" font-size="12.5" fill="#475569">off, human asked, turn limits, budget (human)</text>
+    <path d="M325.0 268 L325.0 278" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M560 244.0 L616 244.0" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="620" y="226" width="430" height="36" rx="18" fill="#fee2e2"/>
+    <text x="638" y="249.0" font-size="13" fill="#991b1b">hand over now with reason codes</text>
+    <rect x="90" y="280" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="304.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="309.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">5</text>
+    <text x="106" y="300" font-size="15" font-weight="650">Exact and semantic cache</text>
+    <text x="106" y="318" font-size="12.5" fill="#475569">first question, gate says proceed</text>
+    <path d="M325.0 328 L325.0 338" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M560 304.0 L616 304.0" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="620" y="286" width="430" height="36" rx="18" fill="#dcfce7"/>
+    <text x="638" y="309.0" font-size="13" fill="#166534">hit: cached answer, 0 tokens</text>
+    <rect x="90" y="340" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="364.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="369.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">6</text>
+    <text x="106" y="360" font-size="15" font-weight="650">Hybrid retrieval</text>
+    <text x="106" y="378" font-size="12.5" fill="#475569">pgvector + full text, RRF, relevance score</text>
+    <path d="M325.0 388 L325.0 398" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M560 364.0 L616 364.0" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="620" y="346" width="430" height="36" rx="18" fill="#fee2e2"/>
+    <text x="638" y="369.0" font-size="13" fill="#991b1b">nothing above min_relevance: handoff + gap</text>
+    <rect x="90" y="400" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="424.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="429.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">7</text>
+    <text x="106" y="420" font-size="15" font-weight="650">Generate</text>
+    <text x="106" y="438" font-size="12.5" fill="#475569">budget reserved first; extractive without a model</text>
+    <path d="M325.0 448 L325.0 458" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M560 424.0 L616 424.0" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="620" y="406" width="430" height="36" rx="18" fill="#fee2e2"/>
+    <text x="638" y="429.0" font-size="13" fill="#991b1b">provider down: retry, then ai_unavailable</text>
+    <rect x="90" y="460" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="484.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="489.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">8</text>
+    <text x="106" y="480" font-size="15" font-weight="650">Ground</text>
+    <text x="106" y="498" font-size="12.5" fill="#475569">citation to a passage above the threshold</text>
+    <path d="M325.0 508 L325.0 518" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M560 484.0 L616 484.0" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="620" y="466" width="430" height="36" rx="18" fill="#fee2e2"/>
+    <text x="638" y="489.0" font-size="13" fill="#991b1b">not grounded: no_grounded_answer + gap</text>
+    <rect x="90" y="520" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="544.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="549.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">9</text>
+    <text x="106" y="540" font-size="15" font-weight="650">Outbound screen</text>
+    <text x="106" y="558" font-size="12.5" fill="#475569">answer raises a sensitive topic not asked?</text>
+    <path d="M325.0 568 L325.0 578" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M560 544.0 L616 544.0" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="620" y="526" width="430" height="36" rx="18" fill="#fef3c7"/>
+    <text x="638" y="549.0" font-size="13" fill="#92400e">yes: prepare for a person (sensitive_answer)</text>
+    <rect x="90" y="580" width="470" height="48" rx="10" fill="#e0e7ff"/>
+    <circle cx="60" cy="604.0" r="14" fill="#4f46e5"/>
+    <text x="60" y="609.0" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">10</text>
+    <text x="106" y="600" font-size="15" font-weight="650">Finalize</text>
+    <text x="106" y="618" font-size="12.5" fill="#475569">prepared answers (sensitive, VIP, frustration, category) go to a person</text>
+    <path d="M325.0 628 C325.0 652 192.0 650 192.0 678" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="67.0" y="680" width="250" height="60" rx="12" fill="#dcfce7"/>
+    <text x="192.0" y="706" text-anchor="middle" font-size="16" font-weight="700" fill="#166534">Send</text>
+    <text x="192.0" y="726" text-anchor="middle" font-size="12.5" fill="#166534">reply with citations</text>
+    <path d="M325.0 628 C325.0 652 464.0 650 464.0 678" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="339.0" y="680" width="250" height="60" rx="12" fill="#fef3c7"/>
+    <text x="464.0" y="706" text-anchor="middle" font-size="16" font-weight="700" fill="#92400e">Approval</text>
+    <text x="464.0" y="726" text-anchor="middle" font-size="12.5" fill="#92400e">sensitive, approval mode</text>
+    <path d="M325.0 628 C325.0 652 736.0 650 736.0 678" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="611.0" y="680" width="250" height="60" rx="12" fill="#e0f2fe"/>
+    <text x="736.0" y="706" text-anchor="middle" font-size="16" font-weight="700" fill="#075985">Draft</text>
+    <text x="736.0" y="726" text-anchor="middle" font-size="12.5" fill="#075985">agent edits and sends</text>
+    <path d="M325.0 628 C325.0 652 1008.0 650 1008.0 678" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <rect x="883.0" y="680" width="250" height="60" rx="12" fill="#fee2e2"/>
+    <text x="1008.0" y="706" text-anchor="middle" font-size="16" font-weight="700" fill="#991b1b">Escalate</text>
+    <text x="1008.0" y="726" text-anchor="middle" font-size="12.5" fill="#991b1b">handoff, summary, reason</text>
+    <text x="600.0" y="772" text-anchor="middle" font-size="12" fill="#64748b">Everything is written in one fenced transaction: AI message (unique per customer message), ticket fields, ledger, cache, gap, email and webhook jobs.</text>
+  </g>
+</svg>

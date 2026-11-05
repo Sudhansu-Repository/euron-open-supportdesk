@@ -1,0 +1,353 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Variants the shadcn "base-nova" primitives are written against. Base UI marks
+ * state with bare data attributes (data-open, data-checked, ...).
+ */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-checked {
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-unchecked {
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-highlighted {
+  &:where([data-highlighted]) {
+    @slot;
+  }
+}
+
+/*
+ * SupportDesk design tokens. Every color in the app comes from here: components use
+ * the semantic names (primary, ai, note, savings, warning, danger, info, chart-*),
+ * never a hex. Structure comes from fills, spacing and soft shadows; borders are
+ * hairlines reserved for inputs and table rules.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--muted);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--danger);
+  --color-border: var(--border);
+  --color-hairline: var(--hairline);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+
+  --color-savings: var(--savings);
+  --color-savings-soft: var(--savings-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-ai: var(--ai);
+  --color-ai-soft: var(--ai-soft);
+  --color-note: var(--note);
+  --color-note-soft: var(--note-soft);
+  --color-bubble-customer: var(--bubble-customer);
+  --color-bubble-agent: var(--bubble-agent);
+  --color-bubble-agent-foreground: var(--bubble-agent-foreground);
+  --color-code-bg: var(--code-bg);
+  --color-code-fg: var(--code-fg);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+
+  --font-sans: var(--font-sans-stack);
+  --font-mono: var(--font-mono-stack);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+
+  --shadow-xs: var(--elev-1);
+  --shadow-sm: var(--elev-1);
+  --shadow-md: var(--elev-2);
+  --shadow-lg: var(--elev-3);
+  --shadow-xl: var(--elev-4);
+}
+
+:root {
+  color-scheme: light;
+  --font-sans-stack: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono-stack: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --background: #f5f6fa;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --sidebar: #eef0f6;
+  --muted: #eef0f6;
+  --accent: #e8eaf4;
+  --muted-foreground: #5b6476;
+  --subtle: #747d90;
+  --faint: #a1a8b7;
+  --border: #e2e5ee;
+  --hairline: #eceef4;
+  --input: #d8dce7;
+  --ring: #4f46e5;
+
+  /* SupportDesk indigo: the accent for actions, links and focus. */
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --primary-soft: #eef0ff;
+
+  /* The AI agent's own hue, so its messages, badges and decisions read at a glance. */
+  --ai: #7c3aed;
+  --ai-soft: #f3edff;
+  /* Internal notes: never seen by the customer, drawn on a warm fill. */
+  --note: #92400e;
+  --note-soft: #fdf6e3;
+  --bubble-customer: #eef0f6;
+  --bubble-agent: #4f46e5;
+  --bubble-agent-foreground: #ffffff;
+
+  --savings: #047857;
+  --savings-soft: #e3f6ee;
+  --warning: #b45309;
+  --warning-soft: #fdf1dc;
+  --danger: #be123c;
+  --danger-soft: #fde7ec;
+  --danger-foreground: #ffffff;
+  --info: #0369a1;
+  --info-soft: #e1f1fb;
+  --neutral-soft: #eceef4;
+  --code-bg: #0e1020;
+  --code-fg: #dadcf0;
+
+  --chart-1: #4f46e5;
+  --chart-2: #10b981;
+  --chart-3: #a855f7;
+  --chart-4: #f59e0b;
+  --chart-5: #0ea5e9;
+  --chart-6: #f43f5e;
+  --chart-grid: #e8eaf1;
+  --chart-axis: #8a92a3;
+
+  /* The sign-in brand panel is dark in both themes. */
+  --panel: #0d0b26;
+  --panel-glow: rgba(99, 102, 241, 0.45);
+  --panel-glow-2: rgba(168, 85, 247, 0.2);
+  --panel-accent: #c7d2fe;
+  --panel-accent-soft: rgba(129, 140, 248, 0.16);
+
+  --elev-1: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --elev-2: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.05);
+  --elev-3: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.08);
+  --elev-4: 0 4px 12px rgba(15, 23, 42, 0.08), 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0b0c14;
+  --foreground: #e7e8f0;
+  --card: #13141f;
+  --popover: #181a27;
+  --sidebar: #0f101a;
+  --muted: #1b1d2b;
+  --accent: #232538;
+  --muted-foreground: #9ba1b6;
+  --subtle: #80869b;
+  --faint: #5e6478;
+  --border: #262839;
+  --hairline: #1f2130;
+  --input: #2d3044;
+  --ring: #818cf8;
+
+  --primary: #818cf8;
+  --primary-foreground: #0c0b29;
+  --primary-soft: #1d1d3f;
+
+  --ai: #c4b5fd;
+  --ai-soft: #251c42;
+  --note: #fcd34d;
+  --note-soft: #2a2312;
+  --bubble-customer: #1f2132;
+  --bubble-agent: #4f46e5;
+  --bubble-agent-foreground: #ffffff;
+
+  --savings: #34d399;
+  --savings-soft: #0f2a22;
+  --warning: #fbbf24;
+  --warning-soft: #2e2410;
+  --danger: #fb7185;
+  --danger-soft: #34151d;
+  --danger-foreground: #1a0a0e;
+  --info: #38bdf8;
+  --info-soft: #0f2533;
+  --neutral-soft: #1f2131;
+
+  --chart-1: #818cf8;
+  --chart-2: #34d399;
+  --chart-3: #c084fc;
+  --chart-4: #fbbf24;
+  --chart-5: #38bdf8;
+  --chart-6: #fb7185;
+  --chart-grid: #20223a;
+  --chart-axis: #737a90;
+
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --elev-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.25);
+  --elev-3: 0 2px 6px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.35);
+  --elev-4: 0 6px 16px rgba(0, 0, 0, 0.4), 0 20px 48px rgba(0, 0, 0, 0.45);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans-stack);
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Surface: the one "box" in the system, a fill plus a soft shadow, never an outline. */
+@utility surface {
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--elev-2);
+}
+
+.recharts-wrapper *:focus {
+  outline: none;
+}
+
+/* Article and message typography (rendered Markdown). */
+.prose-sd {
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+.prose-sd h1,
+.prose-sd h2,
+.prose-sd h3 {
+  font-weight: 600;
+  margin: 1.4em 0 0.5em;
+  line-height: 1.3;
+}
+.prose-sd h1 { font-size: 1.35rem; }
+.prose-sd h2 { font-size: 1.15rem; }
+.prose-sd h3 { font-size: 1rem; }
+.prose-sd p,
+.prose-sd ul,
+.prose-sd ol,
+.prose-sd pre,
+.prose-sd table { margin: 0.75em 0; }
+.prose-sd ul { list-style: disc; padding-left: 1.4em; }
+.prose-sd ol { list-style: decimal; padding-left: 1.4em; }
+.prose-sd a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.prose-sd code {
+  font-family: var(--font-mono-stack);
+  font-size: 0.85em;
+  background: var(--muted);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.prose-sd pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border-radius: 10px;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+}
+.prose-sd pre code { background: transparent; padding: 0; color: inherit; }
+.prose-sd table { border-collapse: collapse; }
+.prose-sd th,
+.prose-sd td { padding: 0.35em 0.7em; border-bottom: 1px solid var(--hairline); text-align: left; }
+.prose-sd blockquote { color: var(--muted-foreground); padding-left: 1em; box-shadow: inset 3px 0 0 var(--border); }
+
+.prose-sd > :first-child { margin-top: 0; }
+.prose-sd > :last-child { margin-bottom: 0; }
+.prose-compact { font-size: 0.875rem; line-height: 1.6; }
+.prose-compact p, .prose-compact ul, .prose-compact ol { margin: 0.4em 0; }
+
+@keyframes sd-typing {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+.typing-dot { animation: sd-typing 1.2s infinite ease-in-out; }
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot { animation: none; opacity: 0.6; }
+}

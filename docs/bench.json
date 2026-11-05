@@ -1,0 +1,76 @@
+{
+  "embedder": "local",
+  "machine": "macOS-26.5.2-arm64-arm-64bit",
+  "cpus": 12,
+  "load_before": [
+    3.78,
+    3.66,
+    4.0
+  ],
+  "ingest": {
+    "sources": 45,
+    "chunks": 312,
+    "seconds": 5.69,
+    "chunks_per_s": 54.8
+  },
+  "extractive": {
+    "end_to_end_ms": {
+      "p50": 69.7,
+      "p90": 96.4,
+      "mean": 75.2,
+      "n": 15
+    },
+    "answered": 13,
+    "of": 15
+  },
+  "steps_ms": {
+    "embed_query": {
+      "p50": 2.6,
+      "p90": 3.0,
+      "mean": 2.7,
+      "n": 15
+    },
+    "retrieve": {
+      "p50": 4.8,
+      "p90": 6.1,
+      "mean": 5.9,
+      "n": 15
+    }
+  },
+  "model_path": {
+    "end_to_end_ms": {
+      "p50": 100.1,
+      "p90": 102.0,
+      "mean": 96.8,
+      "n": 15
+    },
+    "answered": 13,
+    "of": 15
+  },
+  "cache_hit": {
+    "end_to_end_ms": {
+      "p50": 62.5,
+      "p90": 98.5,
+      "mean": 67.7,
+      "n": 15
+    },
+    "from_cache": 13,
+    "of": 15
+  },
+  "throughput": {
+    "messages": 200,
+    "accepted_per_s": 55.2,
+    "answered_per_s_one_worker": 8.8
+  },
+  "websocket_fanout_ms": {
+    "p50": 8.2,
+    "p90": 12.5,
+    "mean": 9.2,
+    "n": 30
+  },
+  "load_after": [
+    6.22,
+    4.31,
+    4.23
+  ]
+}

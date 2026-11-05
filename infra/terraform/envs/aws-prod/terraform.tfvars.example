@@ -1,0 +1,30 @@
+# Copy to terraform.tfvars (git-ignored) and replace every placeholder.
+region      = "us-east-1"
+name_prefix = "acme-supportdesk-prod" # the objects bucket name derives from this: make it globally unique
+
+hostname        = "support.example.com"
+certificate_arn = "<ACM_CERTIFICATE_ARN>"     # same region, covering hostname
+route53_zone_id = "<ROUTE53_HOSTED_ZONE_ID>" # or remove and CNAME hostname to load_balancer_dns_name
+
+# Ticket mail (SES). New accounts start in the SES sandbox: request production access.
+mail_domain       = "support.example.com"
+mail_from_address = "help@support.example.com"
+# mail_from_name  = "Acme Support"
+
+# The image tag pushed to the ecr_repositories output (git commit or release).
+# scripts/aws-deploy.sh passes it on the command line instead.
+image_tag = "0.1.0"
+
+# alarm_email           = "oncall@example.com"
+# metrics_allowed_cidrs = ["203.0.113.10/32"] # your Prometheus egress address
+
+# Inbound email through SES (a region with SES receiving). Create an email inbox in
+# Settings > Inboxes, rotate its inbound token and paste the URL it shows once:
+# enable_inbound_email = true
+# inbound_email_url    = "https://support.example.com/api/v1/channels/email/inbound/<token>"
+
+# A self-hosted model inside the VPC (Ollama, vLLM) on a port other than 443:
+# ai_egress = [{ cidr = "10.0.0.0/16", port = 11434 }]
+
+# Extra non-secret settings (see docs/guides/configuration.md).
+# api_extra_environment = { WIDGET_RPM = "30", LOGIN_RPM = "20", SIGNUP_RPM = "5", WORKER_CONCURRENCY = "8" }

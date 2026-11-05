@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="t d">
+  <title id="t">Euron Open SupportDesk</title>
+  <desc id="d">Self-hosted AI support desk: an AI agent that answers from your own knowledge with sources, and hands everything else to a person with the full context. Illustration of a chat where the AI answers with a cited source and then connects the customer with a teammate.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0b1f"/>
+      <stop offset="1" stop-color="#14123a"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a5b4fc"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6366f1" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.035"/>
+    </pattern>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="320" rx="16" fill="url(#bg)"/>
+  <rect width="1280" height="320" rx="16" fill="url(#grid)"/>
+  <circle cx="1010" cy="160" r="200" fill="url(#halo)"/>
+
+  <g font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+    <rect x="72" y="70" width="44" height="44" rx="12" fill="url(#mark)"/>
+    <path d="M84 84h20a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4h-11l-7 6v-6h-2a4 4 0 0 1-4-4V88a4 4 0 0 1 4-4z" fill="#ffffff" fill-opacity="0.95"/>
+    <text x="132" y="104" fill="#c7d2fe" font-size="18" font-weight="600" letter-spacing="0.4">EURON OPEN</text>
+    <text x="72" y="168" fill="#eef2ff" font-size="54" font-weight="650" letter-spacing="-1.2">Euron Open SupportDesk</text>
+    <text x="74" y="210" fill="#a5b4fc" font-size="22" font-weight="400">AI support that answers from your knowledge, and knows when not to.</text>
+    <text x="74" y="256" fill="#8b8fd6" font-size="16">Self-hosted  ·  cited answers  ·  human handoff  ·  zero-API-key mode  ·  MIT</text>
+  </g>
+
+  <!-- chat illustration -->
+  <g font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" filter="url(#shadow)">
+    <rect x="850" y="34" width="330" height="252" rx="18" fill="#1b1a44"/>
+  </g>
+  <g font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+    <rect x="850" y="34" width="330" height="40" rx="18" fill="#26245e"/>
+    <rect x="850" y="56" width="330" height="18" fill="#26245e"/>
+    <circle cx="874" cy="54" r="6" fill="#4ade80"/>
+    <text x="888" y="59" fill="#e0e7ff" font-size="14" font-weight="600">Support</text>
+
+    <!-- customer -->
+    <rect x="958" y="88" width="206" height="34" rx="12" fill="#4f46e5"/>
+    <text x="972" y="110" fill="#ffffff" font-size="13">How do I reset my password?</text>
+
+    <!-- AI answer with citation -->
+    <rect x="866" y="132" width="236" height="62" rx="12" fill="#2d2b6b"/>
+    <text x="880" y="153" fill="#e0e7ff" font-size="13">Tap Forgot password and enter</text>
+    <text x="880" y="171" fill="#e0e7ff" font-size="13">your email. The link lasts 30 min.</text>
+    <rect x="880" y="178" width="96" height="12" rx="6" fill="#4338ca"/>
+    <text x="887" y="188" fill="#c7d2fe" font-size="9" font-weight="600">SOURCE  FAQ</text>
+
+    <!-- customer asks for refund -->
+    <rect x="986" y="204" width="178" height="30" rx="12" fill="#4f46e5"/>
+    <text x="1000" y="224" fill="#ffffff" font-size="13">I need a refund, please</text>
+
+    <!-- handoff -->
+    <rect x="866" y="244" width="250" height="30" rx="12" fill="#1f1d4f" stroke="#6366f1" stroke-opacity="0.55"/>
+    <circle cx="884" cy="259" r="7" fill="#a5b4fc"/>
+    <text x="898" y="263" fill="#c7d2fe" font-size="12">Connecting you with a teammate</text>
+  </g>
+</svg>
